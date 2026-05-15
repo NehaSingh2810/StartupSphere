@@ -1,5 +1,7 @@
 # StartupSphere
 
+It is the Platform that lists all Startup related events.
+
 StartupSphere is a Laravel 12 + MongoDB startup events discovery and networking platform.
 
 It includes public pages, login and registration, startup listings, event listings, mentor and investor pages, dashboard modules, event registration, saved startups, feedback, profile editing, and settings with password update.
