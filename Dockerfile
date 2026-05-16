@@ -44,7 +44,7 @@ ENV COMPOSER_MEMORY_LIMIT=-1
 # Copy env so artisan commands don't fail if they need it
 RUN cp .env.example .env
 # Run without scripts to prevent artisan failures during build
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs
 
 # Fix permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
