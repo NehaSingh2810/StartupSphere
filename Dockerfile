@@ -10,16 +10,13 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libssl-dev \
     pkg-config \
+    build-essential \
     zip \
     unzip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js (required for Vite/Tailwind)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
-
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath zip
 
 # Install MongoDB extension
 RUN pecl install mongodb \
@@ -42,12 +39,9 @@ WORKDIR /var/www/html
 # Copy existing application directory
 COPY . /var/www/html
 
-# Install PHP dependencies
+# Install PHP dependencies without dev dependencies to save memory
+ENV COMPOSER_MEMORY_LIMIT=-1
 RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Install Node dependencies and build assets
-RUN npm install \
-    && npm run build
 
 # Fix permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
