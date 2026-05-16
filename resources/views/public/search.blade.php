@@ -3,7 +3,7 @@
 <section class="search-hero">
     <span class="tag alert">Global Search</span>
     <h1>Find events, startups, and experts fast.</h1>
-    <p>One search box for the whole platform, backed by ranked Laravel results from MongoDB data.</p>
+    <p>One search box for the whole platform to seamlessly connect with the entire startup ecosystem.</p>
     <form class="search-box" method="get" action="/search">
         <input name="q" value="{{ $query }}" placeholder="Search AI events, SaaS startups, investors, mentors">
         <select name="type">
@@ -18,13 +18,8 @@
 
 @if($query)
     <div class="section-head">
-        <div><h2>{{ $total }} results for "{{ $query }}"</h2><p>Sorted by title match, category match, and profile relevance.</p></div>
+        <div><h2>{{ $total }} results for "{{ $query }}"</h2><p>Sorted by relevance.</p></div>
         <a class="btn light" href="/search">Clear</a>
-    </div>
-    <div class="flow">
-        <div class="flow-step"><strong>1</strong><p>Laravel receives the keyword and selected type from the search form.</p></div>
-        <div class="flow-step"><strong>2</strong><p>The backend checks events, startups, mentors, and investors, then calculates a relevance score.</p></div>
-        <div class="flow-step"><strong>3</strong><p>Only matching results are shown, highest score first.</p></div>
     </div>
     <div class="grid three">
         @forelse($results as $item)

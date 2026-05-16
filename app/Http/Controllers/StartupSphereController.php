@@ -73,6 +73,7 @@ class StartupSphereController extends Controller
     {
         $items = collect($this->eventData())
             ->when($request->category, fn ($list) => $list->where('category', $request->category))
+            ->when($request->city, fn ($list) => $list->filter(fn ($item) => Str::lower($item['city']) === Str::lower($request->city)))
             ->when($request->q, fn ($list) => $list->filter(fn ($item) => Str::contains(Str::lower($item['title'].' '.$item['category'].' '.$item['city']), Str::lower($request->q))))
             ->values()
             ->all();
@@ -81,7 +82,7 @@ class StartupSphereController extends Controller
             'type' => 'events',
             'title' => 'Startup Event Listings',
             'items' => $items,
-            'categories' => ['Workshop', 'Hackathon', 'Pitch Competition', 'Investor Meet', 'Webinar', 'Networking'],
+            'categories' => ['Pitch Competition', 'Hackathon', 'Workshop', 'Webinar', 'Investor Meetup', 'Incubation Program'],
         ]);
     }
 
@@ -96,15 +97,7 @@ class StartupSphereController extends Controller
         ]);
     }
 
-    public function mentors()
-    {
-        return view('public.people', ['title' => 'Mentors', 'people' => $this->mentorData(), 'kind' => 'mentor']);
-    }
 
-    public function investors()
-    {
-        return view('public.people', ['title' => 'Investors', 'people' => $this->investorData(), 'kind' => 'investor']);
-    }
 
     public function register(Request $request)
     {
@@ -116,7 +109,7 @@ class StartupSphereController extends Controller
             'name' => 'required|min:2',
             'email' => 'required|email',
             'phone' => 'required|min:8',
-            'role' => 'required|in:Admin,Startup Founder,Investor',
+            'role' => 'required|in:Admin,Startup Founder,Student',
             'password' => 'required|min:6|confirmed',
         ]);
 
@@ -179,7 +172,7 @@ class StartupSphereController extends Controller
             'investors' => array_slice($this->investorData(), 0, 4),
             'stats' => $this->dashboardStats($events, $startups),
             'bookings' => session('bookings', []),
-            'saved' => session('saved_startups', []),
+            'saved' => $this->mongo->all('saved_startups', []),
             'notifications' => $this->notificationData(),
         ]);
     }
@@ -206,7 +199,7 @@ class StartupSphereController extends Controller
             'saved-startups' => 'Saved Startups',
             'certificates' => 'Certificates',
             'notifications' => 'Notifications',
-            'reviews' => 'Ratings and Reviews',
+            'reviews' => 'Event Reviews',
             'forum' => 'Discussion Forum',
             'profile' => 'Profile',
             'settings' => 'Settings',
@@ -216,14 +209,18 @@ class StartupSphereController extends Controller
 
         $events = $this->eventData();
         $startups = $this->startupData();
+        
+        if ($module === 'saved-startups') {
+            $saved = $this->mongo->all('saved_startups', []);
+            $saved_slugs = collect($saved)->where('user_email', session('startup_user.email'))->pluck('startup_slug')->toArray();
+            $startups = collect($startups)->whereIn('slug', $saved_slugs)->toArray();
+        }
 
         return view('dashboard.module', [
             'module' => $module,
             'title' => $titles[$module],
             'events' => $events,
             'startups' => $startups,
-            'mentors' => $this->mentorData(),
-            'investors' => $this->investorData(),
             'notifications' => $this->notificationData(),
             'reviews' => $this->reviewData(),
             'feedbacks' => $this->feedbackData(),
@@ -287,39 +284,7 @@ class StartupSphereController extends Controller
         return back()->with('status', 'Startup added successfully.');
     }
 
-    public function storeMentor(Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'required|min:3',
-            'expertise' => 'required|min:3',
-            'industry' => 'required|min:3',
-            'experience' => 'required|min:3',
-            'rating' => 'required|numeric|min:1|max:5',
-        ]);
 
-        $data['verified'] = true;
-        $data['sessions'] = 0;
-
-        $this->mongo->insert('mentors', $data);
-
-        return back()->with('status', 'Mentor added successfully.');
-    }
-
-    public function storeInvestor(Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'required|min:3',
-            'expertise' => 'required|min:3',
-            'industry' => 'required|min:3',
-            'experience' => 'required|min:3',
-            'rating' => 'required|numeric|min:1|max:5',
-        ]);
-
-        $data['verified'] = true;
-        $this->mongo->insert('investors', $data);
-
-        return back()->with('status', 'Investor added successfully.');
-    }
 
     public function bookEvent(Request $request, string $slug)
     {
@@ -334,21 +299,20 @@ class StartupSphereController extends Controller
 
     public function saveStartup(Request $request, string $slug)
     {
-        $saved = session('saved_startups', []);
-        $saved[$slug] = $slug;
-        session(['saved_startups' => $saved]);
+        $startup = collect($this->startupData())->firstWhere('slug', $slug);
+        
+        if ($startup) {
+            $saved = session('saved_startups', []);
+            $saved[$slug] = $slug;
+            session(['saved_startups' => $saved]);
+
+            $this->mongo->insert('saved_startups', ['startup_slug' => $slug, 'startup_title' => $startup['name'], 'user_email' => session('startup_user.email')]);
+        }
 
         return back()->with('status', 'Startup saved to your dashboard.');
     }
 
-    public function investorInterest(Request $request, string $slug)
-    {
-        $interests = session('investor_interests', []);
-        $interests[$slug] = ($interests[$slug] ?? 0) + 1;
-        session(['investor_interests' => $interests]);
 
-        return back()->with('status', 'Startup marked as interested.');
-    }
 
     public function storeReview(Request $request)
     {
@@ -476,7 +440,7 @@ class StartupSphereController extends Controller
 
     private function eventData(): array
     {
-        $categories = ['Workshop', 'Hackathon', 'Pitch Competition', 'Investor Meet', 'Webinar', 'Networking', 'Demo Day', 'Roundtable', 'Masterclass'];
+        $categories = ['Pitch Competition', 'Hackathon', 'Workshop', 'Webinar', 'Investor Meetup', 'Incubation Program'];
         $titles = ['Startup Pitch Night', 'AI Innovation Summit', 'FinTech Expo', 'Founder Meetup', 'MVP Build Sprint', 'Investor Connect Day', 'Women Founder Forum', 'SaaS Growth Lab', 'HealthTech Demo Day', 'Campus Startup Fest', 'Legal Basics for Startups', 'Product Launch Bootcamp', 'Growth Marketing Clinic', 'Blockchain Startup Jam', 'EdTech Idea Lab', 'GreenTech Roundtable', 'Series A Prep Workshop', 'Startup Finance Seminar', 'Founders Retreat', 'Startup Demo Day'];
         $items = [];
 

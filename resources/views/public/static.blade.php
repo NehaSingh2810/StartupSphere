@@ -13,10 +13,32 @@
 @elseif($page === 'faq')
 <div class="grid three">@foreach(['How can I register for an event? Login and click Register on any event.','Can I rate events? Yes, feedback supports 1 to 5 star ratings.','Can startups be saved? Yes, logged-in users can save startup profiles.','Is there an admin side? The project includes collections and modules ready for admin management.','Which database is used? MongoDB collections store users, events, startups, bookings, feedback, and more.','What is the demo login? demo@startupsphere.com / password'] as $faq)<div class="card"><p>{{ $faq }}</p></div>@endforeach</div>
 @elseif($page === 'contact')
-<form class="card auth" method="post" action="/feedback">@csrf
-    <h2>Send Message</h2>
-    <input name="rating" type="hidden" value="5"><textarea name="message" rows="5" placeholder="Your message"></textarea><br><br><button class="btn">Submit</button>
-</form>
+<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; align-items: start;">
+    <div>
+        <h2 style="font-size: 28px; margin-bottom: 16px;">We'd Love to Hear From You</h2>
+        <p style="color: var(--muted); margin-bottom: 24px;">Whether you have a question about our events, need help with your startup profile, or just want to say hi, our team is ready to answer all your questions.</p>
+        <div style="display:flex; flex-direction: column; gap: 16px;">
+            <div style="padding: 16px; background: white; border: 1px solid var(--line); border-radius: 8px;">
+                <strong style="color: var(--brand);">Email Us</strong><br>support@startupsphere.com
+            </div>
+            <div style="padding: 16px; background: white; border: 1px solid var(--line); border-radius: 8px;">
+                <strong style="color: var(--brand);">Call Us</strong><br>+91-9876543210
+            </div>
+            <div style="padding: 16px; background: white; border: 1px solid var(--line); border-radius: 8px;">
+                <strong style="color: var(--brand);">Visit Us</strong><br>Mohali, Punjab, India
+            </div>
+        </div>
+    </div>
+    <form class="card" method="post" action="/feedback" style="margin: 0;">
+        @csrf
+        <h2 style="margin-top:0;">Send Us Your Feedback</h2>
+        <input type="text" name="name" placeholder="Your Name" required style="margin-bottom: 12px; width: 100%;">
+        <input type="email" name="email" placeholder="Your Email" required style="margin-bottom: 12px; width: 100%;">
+        <input type="text" name="subject" placeholder="Subject" required style="margin-bottom: 12px; width: 100%;">
+        <textarea name="message" placeholder="Your feedback or suggestion..." rows="6" required style="margin-bottom: 16px; width: 100%;"></textarea>
+        <button class="btn" type="submit" style="width: 100%;">Send Feedback</button>
+    </form>
+</div>
 @elseif($page === 'blogs')
 <div class="grid cards">@foreach(['How to Build an MVP','Startup Funding Guide','Pitch Deck Checklist','Legal Basics','Marketing for Founders','Finding Investors','Product Launch Plan','Hiring First Team'] as $blog)<div class="card"><span class="tag">Blog</span><h3>{{ $blog }}</h3><p>Detailed practical guide for startup founders and students.</p></div>@endforeach</div>
 @else

@@ -29,7 +29,7 @@
             </div>
             <div class="grid three">@foreach($events as $event) @include('partials.event-card', ['event' => $event]) @endforeach</div>
 
-        @elseif(in_array($module, ['startups', 'browse-startups', 'saved-startups', 'my-startup', 'interested-startups']))
+        @elseif(in_array($module, ['startups', 'browse-startups', 'saved-startups', 'my-startup']))
             @if($role === 'Admin' && $module === 'startups')
                 <form class="card" method="post" action="/dashboard/startups">@csrf
                     <h2>Add Startup</h2>
@@ -74,45 +74,7 @@
                 @endforeach
             </div>
 
-        @elseif($module === 'mentors' || $module === 'my-sessions' || $module === 'startup-requests')
-            @if($role === 'Admin' && $module === 'mentors')
-                <form class="card" method="post" action="/dashboard/mentors">@csrf
-                    <h2>Add Mentor</h2>
-                    <div class="grid three">
-                        <input name="name" placeholder="Mentor name" required>
-                        <input name="expertise" placeholder="Expertise" required>
-                        <input name="industry" placeholder="Industry" required>
-                        <input name="experience" placeholder="Experience" required>
-                        <input name="rating" type="number" min="1" max="5" placeholder="Rating" required>
-                    </div><br>
-                    <button class="btn">Add Mentor</button>
-                </form>
-            @endif
-            <div class="grid three">
-                @foreach($mentors as $person)
-                    <div class="card"><span class="tag">{{ $person['expertise'] }}</span><h3>{{ $person['name'] }}</h3><p>{{ $person['experience'] }} | {{ $person['sessions'] }} sessions | Rating {{ $person['rating'] }}</p><button class="btn light">{{ $module === 'startup-requests' ? 'Accept Request' : 'View' }}</button></div>
-                @endforeach
-            </div>
 
-        @elseif($module === 'investors' || $module === 'investor-requests')
-            @if($role === 'Admin' && $module === 'investors')
-                <form class="card" method="post" action="/dashboard/investors">@csrf
-                    <h2>Add Investor</h2>
-                    <div class="grid three">
-                        <input name="name" placeholder="Investor name" required>
-                        <input name="expertise" placeholder="Expertise" required>
-                        <input name="industry" placeholder="Industry" required>
-                        <input name="experience" placeholder="Experience" required>
-                        <input name="rating" type="number" min="1" max="5" placeholder="Rating" required>
-                    </div><br>
-                    <button class="btn">Add Investor</button>
-                </form>
-            @endif
-            <div class="grid three">
-                @foreach($investors as $person)
-                    <div class="card"><span class="tag">{{ $person['industry'] ?? 'Startup' }}</span><h3>{{ $person['name'] }}</h3><p>{{ $person['expertise'] }} | {{ $person['experience'] }}</p><button class="btn light">View</button></div>
-                @endforeach
-            </div>
 
         @elseif($module === 'reviews')
             <form class="card" method="post" action="/reviews">@csrf

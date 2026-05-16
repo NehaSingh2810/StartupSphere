@@ -9,6 +9,8 @@
         * { box-sizing: border-box; }
         html, body { min-height: 100%; }
         body { margin:0; font-family: Arial, Helvetica, sans-serif; color:var(--ink); background:#fbfdfb; line-height:1.5; display:flex; flex-direction:column; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        main { animation: fadeIn 0.4s ease-out forwards; }
         a, button { color:inherit; text-decoration:none; font:inherit; }
         .wrap { width:100%; max-width:1180px; margin:auto; padding:0 20px; }
         header { position:sticky; top:0; z-index:10; background:#fffffff0; border-bottom:1px solid var(--line); backdrop-filter: blur(10px); }
@@ -16,7 +18,9 @@
         .logo { font-weight:800; font-size:22px; color:var(--brand); }
         .nav-toggle { display:none; border:0; background:transparent; color:var(--ink); font-size:28px; cursor:pointer; line-height:1; }
         .links { display:flex; align-items:center; flex-wrap:wrap; gap:14px; font-size:14px; }
-        .btn { border:0; border-radius:6px; padding:10px 14px; background:var(--brand); color:white; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:40px; }
+        .links a.active { color: var(--brand); font-weight: bold; border-bottom: 2px solid var(--brand); padding-bottom: 2px; }
+        .btn { border:0; border-radius:6px; padding:10px 14px; background:var(--brand); color:white; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:40px; transition: all 0.3s ease; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15, 139, 111, 0.3); }
         .btn.alt { background:#102022; }
         .btn.light { background:#e8f4ef; color:var(--brand); }
         .hero { min-height:calc(100vh - 128px); display:grid; grid-template-columns:1.1fr .9fr; gap:38px; align-items:center; padding:60px 0 48px; }
@@ -31,7 +35,8 @@
         .stats { grid-template-columns:repeat(5,1fr); margin:24px 0; }
         .grid.cards { grid-template-columns:repeat(4,1fr); }
         .grid.three { grid-template-columns:repeat(3,1fr); }
-        .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:18px; box-shadow:0 10px 26px #1020220d; }
+        .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:18px; box-shadow:0 10px 26px #1020220d; transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(16, 32, 34, 0.1); border-color: #0f8b6f55; }
         .thumb { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:6px; margin-bottom:12px; background:var(--soft); }
         .panel { background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:20px; }
         .metric { font-size:28px; font-weight:800; color:var(--brand); }
@@ -55,7 +60,8 @@
         .flow-step strong { width:32px; height:32px; border-radius:50%; display:grid; place-items:center; background:#102022; color:white; }
         section { padding:46px 0; }
         .toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 26px; }
-        input, select, textarea { width:100%; padding:12px; border:1px solid var(--line); border-radius:6px; font:inherit; background:white; }
+        input, select, textarea { width:100%; padding:12px; border:1px solid var(--line); border-radius:6px; font:inherit; background:white; transition: all 0.2s ease; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(15, 139, 111, 0.15); }
         form.inline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
         form.inline input, form.inline select { width:auto; min-width:190px; }
         .auth { max-width:520px; margin:48px auto; }
@@ -65,7 +71,8 @@
         .side a:hover, .drop a:hover { background:var(--soft); }
         .topline { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; }
         .user-menu { position: relative; }
-        .drop { position:absolute; right:0; top:62px; background:white; border:1px solid var(--line); border-radius:8px; padding:8px; min-width:220px; display:none; box-shadow:0 18px 36px #10202224; }
+        .drop { position:absolute; right:0; top:62px; background:white; border:1px solid var(--line); border-radius:8px; padding:8px; min-width:220px; box-shadow:0 18px 36px #10202224; z-index:50; }
+        [x-cloak] { display: none !important; }
         .drop a, .drop form { width:100%; }
         .drop button { width:100%; }
         .drop a { display:block; padding:10px 12px; border-radius:6px; }
@@ -99,15 +106,20 @@
             <a class="logo" href="/">StartupSphere</a>
             <button class="nav-toggle" @click="open = !open" aria-label="Toggle menu">☰</button>
             <div class="links" :class="{ 'open': open }">
-                <a href="/">Home</a><a href="/events">Events</a><a href="/startups">Startups</a><a href="/mentors">Mentors</a><a href="/investors">Investors</a><a href="/about">About</a><a href="/contact">Contact</a>
+                <a href="/" class="{{ request()->is('/') ? 'active' : '' }}">Home</a><a href="/events" class="{{ request()->is('events*') ? 'active' : '' }}">Events</a><a href="/startups" class="{{ request()->is('startups*') ? 'active' : '' }}">Startups</a><a href="/about" class="{{ request()->is('about') ? 'active' : '' }}">About</a><a href="/contact" class="{{ request()->is('contact') ? 'active' : '' }}">Contact</a>
                 @if(session('startup_user'))
                     <div class="user-menu" x-data="{ openUser: false }" @click.away="openUser = false">
-                        <button type="button" class="btn light" @click.prevent.stop="openUser = !openUser">{{ session('startup_user.name') }}</button>
+                        <button type="button" class="btn light" @click.prevent.stop="openUser = !openUser">
+                            <span style="background:var(--brand);color:white;padding:2px 6px;border-radius:4px;font-size:11px;margin-right:6px;">{{ session('startup_user.role') ?? 'User' }}</span>
+                            {{ session('startup_user.name') }}
+                            <svg style="width:14px;height:14px;margin-left:4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
                         <div class="drop" x-show="openUser" x-cloak x-transition @click.stop>
                             <a href="/">Home</a>
                             <a href="/dashboard">Dashboard</a>
                             <a href="/dashboard/profile">My Profile</a>
                             <a href="/dashboard/settings">Settings</a>
+                            <hr style="border:0;border-top:1px solid var(--line);margin:8px 0;">
                             <form method="post" action="/logout">@csrf<button class="btn alt" type="submit">Logout</button></form>
                         </div>
                     </div>
@@ -124,10 +136,33 @@
     @yield('content')
 </main>
 <footer>
-    <div class="wrap">
-        <h3>StartupSphere</h3>
-        <p>Role-based startup event listing platform with events, startups, mentors, investors, registrations, reviews, and feedback.</p>
-        <p>Phone: +91-9876543210 | Email: support@startupsphere.com | Address: Mohali, Punjab, India</p>
+    <div class="wrap" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:24px;">
+        <div>
+            <h3>StartupSphere</h3>
+            <p>Your one-stop platform for discovering startup events, pitch competitions, and hackathons.</p>
+            <p>&copy; {{ date('Y') }} StartupSphere. All rights reserved.</p>
+        </div>
+        <div>
+            <h4 style="margin-bottom: 12px;">Quick Links</h4>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <a href="/about" style="color:#dce6e2;">About Us</a>
+                <a href="/events" style="color:#dce6e2;">Events</a>
+                <a href="/startups" style="color:#dce6e2;">Startups</a>
+                <a href="/contact" style="color:#dce6e2;">Contact</a>
+            </div>
+        </div>
+        <div>
+            <h4 style="margin-bottom: 12px;">Legal</h4>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <a href="/privacy" style="color:#dce6e2;">Privacy Policy</a>
+                <a href="/terms" style="color:#dce6e2;">Terms of Service</a>
+                <div style="margin-top:8px;">
+                    <strong>Follow Us:</strong><br>
+                    <a href="#" style="margin-right: 8px; color:#dce6e2;">LinkedIn</a>
+                    <a href="#" style="color:#dce6e2;">Twitter</a>
+                </div>
+            </div>
+        </div>
     </div>
 </footer>
 </body>

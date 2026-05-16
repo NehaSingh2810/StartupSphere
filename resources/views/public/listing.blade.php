@@ -9,9 +9,18 @@
         <button class="btn">Global Search</button>
     </form>
     <form class="inline" method="get">
-        <input name="q" value="{{ request('q') }}" placeholder="Search name, city, category">
-        <select name="category"><option value="">All categories</option>@foreach($categories as $category)<option @selected(request('category')===$category)>{{ $category }}</option>@endforeach</select>
-        <button class="btn">Filter</button><a class="btn light" href="{{ url()->current() }}">Reset</a>
+        <input name="q" value="{{ request('q') }}" placeholder="Search title or keyword">
+        @if($type === 'events')
+            <input type="text" name="city" value="{{ request('city') }}" placeholder="City (e.g. Bangalore)">
+        @endif
+        <select name="category">
+            <option value="">All categories</option>
+            @foreach($categories as $category)
+                <option @selected(request('category')===$category)>{{ $category }}</option>
+            @endforeach
+        </select>
+        <button class="btn">Filter</button>
+        <a class="btn light" href="{{ url()->current() }}">Reset</a>
     </form>
 </section>
 <div class="grid cards">

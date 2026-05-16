@@ -5,52 +5,39 @@
     @include('partials.dashboard-nav')
     <section>
         <div class="topline">
-            <div><h1>{{ $role }} Dashboard</h1><p>Welcome, {{ session('startup_user.name') }}. Manage your StartupSphere activity from this role-based workspace.</p></div>
+            <div><h1>Welcome Back, {{ session('startup_user.name') }}</h1><p>Manage your StartupSphere activity from this workspace.</p></div>
             <span class="tag">{{ $role }}</span>
         </div>
 
-        <div class="stats">
-            <div class="card"><div class="metric">{{ $stats['events'] }}</div><p>Events</p></div>
-            <div class="card"><div class="metric">{{ $stats['startups'] }}</div><p>Startups</p></div>
-            <div class="card"><div class="metric">{{ $stats['mentors'] }}</div><p>Mentors</p></div>
-            <div class="card"><div class="metric">{{ $stats['investors'] }}</div><p>Investors</p></div>
-            <div class="card"><div class="metric">{{ count($notifications) }}</div><p>Notifications</p></div>
-        </div>
-
-        <div class="panel">
-            <h2>Project Flow</h2>
-            <p>StartupSphere is a role-based event discovery platform. Public users browse startup events, startups, mentors, and investors. Logged-in users manage activity according to role: Admin, Startup Founder, or Investor.</p>
+        <div class="panel" style="margin-bottom: 24px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <strong style="font-size:14px;">Profile 80% Complete</strong>
+                <span style="font-size:13px; color:var(--muted);">Add photo, bio, city, skills</span>
+            </div>
+            <div class="bar"><span style="width:80%"></span></div>
         </div>
 
         @if($role === 'Admin')
-            <div class="grid three">
-                <div class="card"><h3>Manage Events</h3><p>Add, edit, and review startup event listings.</p><a class="btn light" href="/dashboard/events">Open Events</a></div>
-                <div class="card"><h3>Approve Startups</h3><p>Review startup profiles before showing them in the directory.</p><a class="btn light" href="/dashboard/startups">Open Startups</a></div>
-                <div class="card"><h3>User and Feedback</h3><p>Manage platform users and read feedback submissions.</p><a class="btn light" href="/dashboard/users">Open Users</a></div>
+            <div class="grid cards" style="margin-bottom: 32px;">
+                <div class="card"><h3>Users</h3><p>Manage platform users.</p><a class="btn light" href="/dashboard/users">Open</a></div>
+                <div class="card"><h3>Events</h3><p>Manage startup events.</p><a class="btn light" href="/dashboard/events">Open</a></div>
+                <div class="card"><h3>Feedback</h3><p>Read feedback submissions.</p><a class="btn light" href="/dashboard/feedback">Open</a></div>
+                <div class="card"><h3>Reports</h3><p>View system reports.</p><a class="btn light" href="/dashboard/reports">Open</a></div>
             </div>
         @elseif($role === 'Startup Founder')
-            <div class="grid three">
-                <div class="card"><h3>My Startup</h3><p>Create and update startup profile details.</p><a class="btn light" href="/dashboard/my-startup">Edit Startup</a></div>
-                <div class="card"><h3>My Events</h3><p>Register for pitch events, workshops, and hackathons.</p><a class="btn light" href="/dashboard/my-events">View Events</a></div>
-                <div class="card"><h3>Investor Requests</h3><p>See investors who marked interest in your startup.</p><a class="btn light" href="/dashboard/investor-requests">View Requests</a></div>
+            <div class="grid cards" style="margin-bottom: 32px;">
+                <div class="card"><h3>My Startup</h3><p>Edit profile details.</p><a class="btn light" href="/dashboard/my-startup">Open</a></div>
+                <div class="card"><h3>My Events</h3><p>Registered events.</p><a class="btn light" href="/dashboard/my-events">Open</a></div>
+                <div class="card"><h3>Saved Startups</h3><p>Startups you saved.</p><a class="btn light" href="/dashboard/saved-startups">Open</a></div>
+                <div class="card"><h3>Reviews</h3><p>Read event reviews.</p><a class="btn light" href="/dashboard/reviews">Open</a></div>
             </div>
-        @elseif($role === 'Investor')
-            <div class="grid three">
-                <div class="card"><h3>Browse Startups</h3><p>Search startup profiles by industry, stage, city, and rating.</p><a class="btn light" href="/dashboard/browse-startups">Browse</a></div>
-                <div class="card"><h3>Interested Startups</h3><p>Track startups you marked Interested.</p><a class="btn light" href="/dashboard/interested-startups">View List</a></div>
-                <div class="card"><h3>Pitch Events</h3><p>Attend startup pitch events and funding workshops.</p><a class="btn light" href="/dashboard/events">View Events</a></div>
-            </div>
-        @elseif($role === 'Mentor')
-            <div class="grid three">
-                <div class="card"><h3>My Sessions</h3><p>Manage mentorship sessions and workshop participation.</p><a class="btn light" href="/dashboard/my-sessions">Open Sessions</a></div>
-                <div class="card"><h3>Startup Requests</h3><p>Accept or review startup guidance requests.</p><a class="btn light" href="/dashboard/startup-requests">View Requests</a></div>
-                <div class="card"><h3>Events</h3><p>Attend webinars, workshops, and mentor panels.</p><a class="btn light" href="/dashboard/events">View Events</a></div>
-            </div>
+
         @else
-            <div class="grid three">
-                <div class="card"><h3>Browse Events</h3><p>Register for startup events, webinars, and hackathons.</p><a class="btn light" href="/dashboard/browse-events">Browse Events</a></div>
-                <div class="card"><h3>Saved Startups</h3><p>Bookmark interesting startups for later learning.</p><a class="btn light" href="/dashboard/saved-startups">View Saved</a></div>
-                <div class="card"><h3>Certificates</h3><p>View certificates earned after workshops.</p><a class="btn light" href="/dashboard/certificates">Open Certificates</a></div>
+            <div class="grid cards" style="margin-bottom: 32px;">
+                <div class="card"><h3>Upcoming Events</h3><p>Register for events.</p><a class="btn light" href="/dashboard/browse-events">Open</a></div>
+                <div class="card"><h3>Registered Events</h3><p>Your bookings.</p><a class="btn light" href="/dashboard/registered-events">Open</a></div>
+                <div class="card"><h3>Saved Events</h3><p>Events you bookmarked.</p><a class="btn light" href="/dashboard/saved-startups">Open</a></div>
+                <div class="card"><h3>Certificates</h3><p>Workshop certificates.</p><a class="btn light" href="/dashboard/certificates">Open</a></div>
             </div>
         @endif
 

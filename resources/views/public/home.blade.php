@@ -2,29 +2,36 @@
 @section('content')
 <section class="hero">
     <div>
-        <span class="tag">Mobile-friendly Startup Platform</span>
-        <h1>Discover Startup Events, Connect with Industry Experts, Grow Your Network</h1>
-        <p>StartupSphere delivers a full-width web experience that adjusts to desktop and mobile screens. Admins can add startups, mentors, and investors while founders and investors use the dashboard by role.</p>
-        <form class="search-box" method="get" action="/search">
-            <input name="q" placeholder="Search pitch events, hackathons, startups, mentors">
-            <select name="type"><option value="all">All</option><option value="events">Events</option><option value="startups">Startups</option><option value="people">Mentors/Investors</option></select>
-            <button class="btn">Search</button>
-        </form>
+        <span class="tag">The Startup Ecosystem</span>
+        <h1>Find Startup Events, Pitch Competitions, Hackathons, Investor Meets, and Workshops in One Place</h1>
+        <p>Your centralized hub for discovering and participating in the startup ecosystem. Browse events by city, category, and date, register securely, and connect with founders and investors.</p>
+        
+        <div style="margin: 24px 0;">
+            <p style="font-weight: 600; margin-bottom: 12px; color: var(--ink);">Explore Categories:</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                @foreach(['Pitch Competition', 'Hackathon', 'Workshop', 'Webinar', 'Investor Meetup', 'Incubation Program'] as $cat)
+                    <a href="/events?category={{ urlencode($cat) }}" class="tag" style="background: white; border: 1px solid var(--line); color: var(--ink);">{{ $cat }}</a>
+                @endforeach
+            </div>
+        </div>
+
         <p><a class="btn" href="/events">Explore Events</a> <a class="btn alt" href="/register">Join Now</a></p>
-        <p class="tag">{{ $mongoOnline ? 'MongoDB connected' : 'Demo data visible. Start MongoDB for live storage.' }}</p>
     </div>
     <div class="hero-art">
         <span class="tag verify">Startup event discovery</span>
-        <h2>One platform for events, startups, mentors, investors, reviews, and feedback.</h2>
-        <p style="color:white">Simple enough for viva, realistic enough for a product demo.</p>
+        <h2>The ultimate platform for discovering and managing startup events.</h2>
     </div>
 </section>
 
 <div class="stats">
-    @foreach(['300+ Events','150+ Startups','60+ Mentors','40+ Investors','800+ Users'] as $stat)
-        <div class="card"><div class="metric">{{ explode(' ', $stat)[0] }}</div><p>{{ substr($stat, strpos($stat, ' ') + 1) }}</p></div>
-    @endforeach
+    <div class="card"><div class="metric">300+</div><p>Events Listed</p></div>
+    <div class="card"><div class="metric">45</div><p>Events in Bangalore</p></div>
+    <div class="card"><div class="metric">30</div><p>Events in Delhi</p></div>
+    <div class="card"><div class="metric">25</div><p>Events in Mumbai</p></div>
+    <div class="card"><div class="metric">800+</div><p>Active Users</p></div>
 </div>
+
+
 
 <section>
     <div class="section-head"><div><h2>Upcoming Events</h2><p>Search, filter, and register for startup events.</p></div><a class="btn light" href="/events">View All</a></div>
@@ -46,19 +53,7 @@
     <div class="grid three">@foreach($investors as $person)<div class="card"><span class="tag">{{ $person['industry'] ?? 'Startup' }}</span><h3>{{ $person['name'] }}</h3><p>Focus: {{ $person['expertise'] }} | Range {{ $person['experience'] }}</p></div>@endforeach</div>
 </section>
 
-<section>
-    <div class="section-head"><h2>Send Us Your Feedback</h2></div>
-    <div class="grid">
-        <form method="post" action="/feedback" style="max-width: 600px;">
-            @csrf
-            <input type="text" name="name" placeholder="Your Name" required>
-            <input type="email" name="email" placeholder="Your Email" required>
-            <input type="text" name="subject" placeholder="Subject" required>
-            <textarea name="message" placeholder="Your feedback or suggestion..." rows="6" required></textarea>
-            <button class="btn" type="submit">Send Feedback</button>
-        </form>
-    </div>
-</section>
+
 
 <section>
     <div class="grid three">
