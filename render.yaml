@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: startupsphere
+    env: docker
+    plan: free
+    branch: main
+    envVars:
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: APP_URL
+        # Render will automatically map this to the generated URL
+        value: https://startupsphere.onrender.com 
+      # Since we are using an array structure in the app, this avoids breaking if mongo is not set immediately
+      - key: MONGO_URI
+        value: mongodb://localhost:27017
