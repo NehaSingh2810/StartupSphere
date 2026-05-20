@@ -6,7 +6,7 @@
 </section>
 @if($page === 'about')
 <div class="grid three">
-    <div class="card"><h3>Mission</h3><p>Connect startup ecosystems across India with events, mentorship, investors, and learning resources.</p></div>
+    <div class="card"><h3>Mission</h3><p>Connect startup ecosystems across India with events, investors, founders, and learning resources.</p></div>
     <div class="card"><h3>Vision</h3><p>Become a trusted discovery and networking platform for early-stage startup growth.</p></div>
     <div class="card"><h3>Why Us</h3><p>One platform for startup listings, event booking, ratings, reviews, feedback, and profile management.</p></div>
 </div>
@@ -41,6 +41,18 @@
 </div>
 @elseif($page === 'blogs')
 <div class="grid cards">@foreach(['How to Build an MVP','Startup Funding Guide','Pitch Deck Checklist','Legal Basics','Marketing for Founders','Finding Investors','Product Launch Plan','Hiring First Team'] as $blog)<div class="card"><span class="tag">Blog</span><h3>{{ $blog }}</h3><p>Detailed practical guide for startup founders and students.</p></div>@endforeach</div>
+@elseif($page === 'investors')
+<div class="grid three">
+    <div class="card"><span class="tag verify">Investor Role</span><h3>What Investors Do</h3><p>Investors browse events and startups, then send investment interest to the admin account for follow-up.</p><a class="btn light" href="/register">Create Investor Account</a></div>
+    <div class="card"><span class="tag">Different from Admin</span><h3>No Management Access</h3><p>Investors cannot add events, manage users, or change platform records. Admin controls those modules.</p><a class="btn light" href="/events">Browse Events</a></div>
+    <div class="card"><span class="tag alert">Connected Flow</span><h3>Admin Notifications</h3><p>Every investor event or startup request appears in the admin notifications dashboard.</p><a class="btn light" href="/startups">Browse Startups</a></div>
+</div>
+@elseif(in_array($page, ['privacy', 'terms']))
+<div class="grid three">
+    <div class="card"><h3>Accounts</h3><p>Demo users can register, login, update profiles, and manage dashboard activity.</p></div>
+    <div class="card"><h3>Activity</h3><p>Event registrations, startup saves, reviews, and feedback are stored for project workflow demonstration.</p></div>
+    <div class="card"><h3>Support</h3><p>For changes or questions, use the contact page feedback form.</p><a class="btn light" href="/contact">Contact</a></div>
+</div>
 @else
 <div class="grid three">@foreach(['Pitch deck template','Funding checklist','Business model canvas','Legal document samples','Marketing launch plan','Investor email format'] as $resource)<div class="card"><h3>{{ $resource }}</h3><p>Ready-to-use startup resource section for your project demo.</p></div>@endforeach</div>
 @endif

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-@php($role = session('startup_user.role', 'Startup Founder'))
+@php($role = session('startup_user.role', 'User'))
 <div class="dash">
     @include('partials.dashboard-nav')
     <section>
@@ -21,23 +21,29 @@
             <div class="grid cards" style="margin-bottom: 32px;">
                 <div class="card"><h3>Users</h3><p>Manage platform users.</p><a class="btn light" href="/dashboard/users">Open</a></div>
                 <div class="card"><h3>Events</h3><p>Manage startup events.</p><a class="btn light" href="/dashboard/events">Open</a></div>
-                <div class="card"><h3>Feedback</h3><p>Read feedback submissions.</p><a class="btn light" href="/dashboard/feedback">Open</a></div>
+                <div class="card"><h3>Startups</h3><p>Manage startup listings.</p><a class="btn light" href="/dashboard/startups">Open</a></div>
+                <div class="card"><h3>Investors</h3><p>View investor data.</p><a class="btn light" href="/dashboard/investors">Open</a></div>
+                <div class="card"><h3>Notifications</h3><p>Review registrations and investor requests.</p><a class="btn light" href="/dashboard/notifications">Open</a></div>
                 <div class="card"><h3>Reports</h3><p>View system reports.</p><a class="btn light" href="/dashboard/reports">Open</a></div>
             </div>
-        @elseif($role === 'Startup Founder')
+        @elseif($role === 'User')
             <div class="grid cards" style="margin-bottom: 32px;">
-                <div class="card"><h3>My Startup</h3><p>Edit profile details.</p><a class="btn light" href="/dashboard/my-startup">Open</a></div>
-                <div class="card"><h3>My Events</h3><p>Registered events.</p><a class="btn light" href="/dashboard/my-events">Open</a></div>
+                <div class="card"><h3>Upcoming Events</h3><p>Register for events.</p><a class="btn light" href="/dashboard/browse-events">Open</a></div>
+                <div class="card"><h3>Registered Events</h3><p>Your bookings.</p><a class="btn light" href="/dashboard/registered-events">Open</a></div>
                 <div class="card"><h3>Saved Startups</h3><p>Startups you saved.</p><a class="btn light" href="/dashboard/saved-startups">Open</a></div>
                 <div class="card"><h3>Reviews</h3><p>Read event reviews.</p><a class="btn light" href="/dashboard/reviews">Open</a></div>
             </div>
 
+        @elseif($role === 'Startup Investor')
+            <div class="grid cards" style="margin-bottom: 32px;">
+                <div class="card"><h3>Browse Events</h3><p>Review events and request investment.</p><a class="btn light" href="/dashboard/browse-events">Open</a></div>
+                <div class="card"><h3>Browse Startups</h3><p>Find startups and send interest to admin.</p><a class="btn light" href="/dashboard/browse-startups">Open</a></div>
+                <div class="card"><h3>Requests</h3><p>Your requests notify admin for review.</p><a class="btn light" href="/dashboard/investor-requests">Open</a></div>
+            </div>
         @else
             <div class="grid cards" style="margin-bottom: 32px;">
-                <div class="card"><h3>Upcoming Events</h3><p>Register for events.</p><a class="btn light" href="/dashboard/browse-events">Open</a></div>
-                <div class="card"><h3>Registered Events</h3><p>Your bookings.</p><a class="btn light" href="/dashboard/registered-events">Open</a></div>
-                <div class="card"><h3>Saved Events</h3><p>Events you bookmarked.</p><a class="btn light" href="/dashboard/saved-startups">Open</a></div>
-                <div class="card"><h3>Certificates</h3><p>Workshop certificates.</p><a class="btn light" href="/dashboard/certificates">Open</a></div>
+                <div class="card"><h3>Reviews</h3><p>Read event reviews.</p><a class="btn light" href="/dashboard/reviews">Open</a></div>
+                <div class="card"><h3>Notifications</h3><p>View account updates.</p><a class="btn light" href="/dashboard/notifications">Open</a></div>
             </div>
         @endif
 

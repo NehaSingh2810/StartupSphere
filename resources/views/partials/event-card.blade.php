@@ -28,11 +28,20 @@
     
     <div style="display:flex; gap:8px;">
         <a class="btn light" style="flex:1;" href="/events/{{ $event['slug'] }}">Details</a>
-        @if(session('startup_user') && $left > 0)
+        @if(session('startup_user') && session('startup_user.role') === 'User' && $left > 0)
             <form method="post" action="/events/{{ $event['slug'] }}/book" style="flex:1; display:flex;">
                 @csrf
                 <button class="btn" style="width:100%;">Register Now</button>
             </form>
+        @elseif(session('startup_user') && session('startup_user.role') === 'Startup Investor')
+            <form method="post" action="/events/{{ $event['slug'] }}/invest" style="flex:1; display:flex;">
+                @csrf
+                <button class="btn" style="width:100%;">Invest Request</button>
+            </form>
+        @elseif(session('startup_user') && session('startup_user.role') === 'Admin')
+            <span class="tag" style="align-self:center;">Admin view only</span>
+        @elseif(session('startup_user'))
+            <span class="tag" style="align-self:center;">Users register; startup investors request</span>
         @endif
     </div>
 </div>

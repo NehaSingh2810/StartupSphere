@@ -14,6 +14,8 @@
     <p>Funding: Rs {{ $raised }}L raised / Goal Rs {{ $goal }}L</p>
     @if(session('startup_user'))
         <form method="post" action="/startups/{{ $startup['slug'] }}/save" style="display:inline">@csrf<button class="btn light">Save Startup</button></form>
-        <form method="post" action="/startups/{{ $startup['slug'] }}/interest" style="display:inline">@csrf<button class="btn">Interested</button></form>
+        @if(session('startup_user.role') === 'Startup Investor')
+            <form method="post" action="/startups/{{ $startup['slug'] }}/interest" style="display:inline">@csrf<button class="btn">Invest Request</button></form>
+        @endif
     @endif
 </div>

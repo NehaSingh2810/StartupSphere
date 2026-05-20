@@ -44,12 +44,7 @@
 </section>
 
 <section>
-    <div class="section-head"><div><h2>Top Mentors</h2><p>Find experienced mentors for workshops and startup guidance.</p></div><a class="btn light" href="/mentors">View Mentors</a></div>
-    <div class="grid three">@foreach($mentors as $person)<div class="card"><span class="tag">{{ $person['expertise'] }}</span><h3>{{ $person['name'] }}</h3><p>{{ $person['experience'] }} experience | {{ $person['sessions'] }} sessions | Rating {{ $person['rating'] }}</p></div>@endforeach</div>
-</section>
-
-<section>
-    <div class="section-head"><div><h2>Top Investors</h2><p>Discover investors who attend pitch events and review startup profiles.</p></div><a class="btn light" href="/investors">View Investors</a></div>
+    <div class="section-head"><div><h2>Top Investors</h2><p>Investors can browse events and startups, then send investment requests to admin for review.</p></div><a class="btn light" href="/investors">View Investors</a></div>
     <div class="grid three">@foreach($investors as $person)<div class="card"><span class="tag">{{ $person['industry'] ?? 'Startup' }}</span><h3>{{ $person['name'] }}</h3><p>Focus: {{ $person['expertise'] }} | Range {{ $person['experience'] }}</p></div>@endforeach</div>
 </section>
 
@@ -59,7 +54,7 @@
     <div class="grid three">
         <div class="card"><h2>About StartupSphere</h2><p>A role-based platform for listing startup-related events and connecting ecosystem members.</p><a class="btn light" href="/about">About Us</a></div>
         <div class="card"><h2>Contact Us</h2><p>Phone: +91-9876543210<br>Email: support@startupsphere.com<br>Address: Mohali, Punjab, India</p><a class="btn light" href="/contact">Contact</a></div>
-        <div class="card"><h2>Core Modules</h2><p>Events, startups, mentors, investors, registrations, reviews, feedback, and users.</p><a class="btn light" href="/register">Create Account</a></div>
+        <div class="card"><h2>Core Modules</h2><p>Events, startups, investors, registrations, reviews, feedback, notifications, and users.</p><a class="btn light" href="/register">Create Account</a></div>
     </div>
 </section>
 @endsection

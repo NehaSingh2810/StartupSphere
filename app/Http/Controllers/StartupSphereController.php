@@ -14,10 +14,23 @@ class StartupSphereController extends Controller
 
     public function home()
     {
+        $events = $this->eventData();
+        $recentReviewSlugs = collect(session('reviews', []))
+            ->pluck('event_slug')
+            ->filter()
+            ->reverse()
+            ->values();
+
+        if ($recentReviewSlugs->isNotEmpty()) {
+            $events = collect($events)
+                ->sortBy(fn ($event) => ($index = $recentReviewSlugs->search($event['slug'])) === false ? 999 : $index)
+                ->values()
+                ->all();
+        }
+
         return view('public.home', [
-            'events' => array_slice($this->eventData(), 0, 4),
+            'events' => array_slice($events, 0, 4),
             'startups' => array_slice($this->startupData(), 0, 4),
-            'mentors' => array_slice($this->mentorData(), 0, 3),
             'investors' => array_slice($this->investorData(), 0, 3),
             'mongoOnline' => $this->mongo->available(),
         ]);
@@ -26,12 +39,15 @@ class StartupSphereController extends Controller
     public function staticPage(string $page)
     {
         $pages = [
-            'about' => ['About StartupSphere', 'StartupSphere is a role-based platform that lists startup-related events and helps founders, investors, mentors, and students participate in the startup ecosystem.'],
-            'success-stories' => ['Success Stories', 'Read practical stories of founders who validated ideas, met mentors, joined pitch events, and found early customers.'],
+            'about' => ['About StartupSphere', 'StartupSphere is a role-based platform that lists startup-related events and keeps students, investors, founders, and admins connected.'],
+            'success-stories' => ['Success Stories', 'Read practical stories of founders who validated ideas, joined pitch events, met investors, and found early customers.'],
             'blogs' => ['Startup Blog', 'Guides about MVP building, funding, pitch decks, legal basics, marketing, product launches, and startup growth.'],
-            'faq' => ['Frequently Asked Questions', 'Find answers about event registration, ratings, startup reviews, mentor sessions, investor connections, and account settings.'],
+            'faq' => ['Frequently Asked Questions', 'Find answers about event registration, ratings, startup reviews, investor requests, and account settings.'],
             'contact' => ['Contact Us', 'Phone: +91-9876543210 | Email: support@startupsphere.com | Address: Mohali, Punjab, India'],
             'resources' => ['Resource Center', 'Download pitch deck templates, funding checklists, legal document samples, business model canvas, and launch plans.'],
+            'investors' => ['Startup Investors', 'Investors browse events and startups, send investment interest to admin, and track opportunities without managing platform content.'],
+            'privacy' => ['Privacy Policy', 'StartupSphere uses submitted details only for demo account access, event registration, feedback, reviews, investment requests, and saved startup workflows.'],
+            'terms' => ['Terms of Service', 'Use StartupSphere as a project demo platform for browsing startup events, managing profiles, and testing ecosystem workflows responsibly.'],
         ];
 
         abort_unless(isset($pages[$page]), 404);
@@ -93,7 +109,11 @@ class StartupSphereController extends Controller
 
         return view('public.event-detail', [
             'event' => $event,
-            'reviews' => array_slice($this->reviewData(), 0, 4),
+            'reviews' => collect($this->reviewData())
+                ->filter(fn ($review) => ($review['event_slug'] ?? null) === $slug || ($review['target'] ?? null) === $event['title'])
+                ->values()
+                ->all(),
+            'canRegister' => $this->canRegisterForEvents(),
         ]);
     }
 
@@ -109,17 +129,27 @@ class StartupSphereController extends Controller
             'name' => 'required|min:2',
             'email' => 'required|email',
             'phone' => 'required|min:8',
-            'role' => 'required|in:Admin,Startup Founder,Student',
+            'role' => 'required|in:User,Admin,Startup Investor',
             'password' => 'required|min:6|confirmed',
         ]);
 
+        $email = strtolower($data['email']);
+        $role = $data['role'];
+
+        if ($email === '123@gmail.com') {
+            $data['name'] = 'Nehaa';
+            $role = 'Admin';
+        } elseif ($role === 'Admin') {
+            return back()->withErrors(['role' => 'Admin is fixed to Nehaa using 123@gmail.com.'])->onlyInput('email');
+        }
+
         $user = [
             'name' => $data['name'],
-            'email' => strtolower($data['email']),
+            'email' => $email,
             'phone' => $data['phone'],
-            'role' => $data['role'],
+            'role' => $role,
             'password' => password_hash($data['password'], PASSWORD_BCRYPT),
-            'bio' => 'StartupSphere '.$data['role'].' account.',
+            'bio' => 'StartupSphere '.$role.' account.',
             'skills' => 'Startup events, networking, learning',
             'city' => 'Mohali',
         ];
@@ -141,11 +171,25 @@ class StartupSphereController extends Controller
         $user = $this->mongo->findOne('users', ['email' => $email]);
 
         if (! $user && $email === 'demo@startupsphere.com' && $data['password'] === 'password') {
-            $user = ['name' => 'Demo Founder', 'email' => $email, 'phone' => '+91-9876543210', 'role' => 'Startup Founder', 'bio' => 'Building a SaaS startup.', 'skills' => 'Product, events, fundraising', 'city' => 'Mohali'];
+            $user = ['name' => 'Demo User', 'email' => $email, 'phone' => '+91-9876543210', 'role' => 'User', 'bio' => 'StartupSphere user account.', 'skills' => 'Events, startups, reviews', 'city' => 'Mohali'];
+        }
+
+        if ($email === '123@gmail.com' && $data['password'] === '1234567890') {
+            $user = ['name' => 'Nehaa', 'email' => $email, 'phone' => '+91-9000000001', 'role' => 'Admin', 'bio' => 'StartupSphere admin account.', 'skills' => 'Events, users, reports', 'city' => 'Mohali'];
+        }
+
+        if (! $user && $email === 'investor@startupsphere.com' && $data['password'] === 'password') {
+            $user = ['name' => 'Startup Investor Demo', 'email' => $email, 'phone' => '+91-9000000002', 'role' => 'Startup Investor', 'bio' => 'Reviews event and startup investment opportunities.', 'skills' => 'Funding, diligence, portfolio', 'city' => 'Delhi'];
         }
 
         if (! $user || (isset($user['password']) && ! password_verify($data['password'], $user['password']))) {
             return back()->withErrors(['email' => 'Invalid email or password. Try demo@startupsphere.com / password.'])->onlyInput('email');
+        }
+
+        $user['role'] = $this->normalizeRole($user['role'] ?? 'User');
+        if ($email === '123@gmail.com') {
+            $user['name'] = 'Nehaa';
+            $user['role'] = 'Admin';
         }
 
         $request->session()->put('startup_user', $user);
@@ -168,7 +212,6 @@ class StartupSphereController extends Controller
         return view('dashboard.index', [
             'events' => array_slice($events, 0, 5),
             'startups' => array_slice($startups, 0, 5),
-            'mentors' => array_slice($this->mentorData(), 0, 4),
             'investors' => array_slice($this->investorData(), 0, 4),
             'stats' => $this->dashboardStats($events, $startups),
             'bookings' => session('bookings', []),
@@ -183,7 +226,6 @@ class StartupSphereController extends Controller
             'users' => 'Users',
             'events' => 'Events',
             'startups' => 'Startups',
-            'mentors' => 'Mentors',
             'investors' => 'Investors',
             'feedback' => 'Feedback',
             'reports' => 'Reports',
@@ -225,12 +267,17 @@ class StartupSphereController extends Controller
             'reviews' => $this->reviewData(),
             'feedbacks' => $this->feedbackData(),
             'users' => $this->userData(),
+            'investors' => $this->investorData(),
             'stats' => $this->dashboardStats($events, $startups),
         ]);
     }
 
     public function storeEvent(Request $request)
     {
+        if (! $this->isAdmin()) {
+            return back()->with('status', 'Only admin Nehaa can add events.');
+        }
+
         $data = $request->validate([
             'title' => 'required|min:3',
             'category' => 'required',
@@ -256,6 +303,10 @@ class StartupSphereController extends Controller
 
     public function storeStartup(Request $request)
     {
+        if (! $this->isAdmin()) {
+            return back()->with('status', 'Only admin Nehaa can add startups.');
+        }
+
         $data = $request->validate([
             'name' => 'required|min:3',
             'category' => 'required',
@@ -288,11 +339,47 @@ class StartupSphereController extends Controller
 
     public function bookEvent(Request $request, string $slug)
     {
+        if (! $this->canRegisterForEvents()) {
+            return back()->with('status', 'Only users can register for events. Startup investors can send investment requests.');
+        }
+
         $bookings = session('bookings', []);
+        if (isset($bookings[$slug])) {
+            return back()->with('status', 'You are already registered for this event.');
+        }
+
+        $event = collect($this->eventData())->firstWhere('slug', $slug);
+        abort_unless($event, 404);
+
+        if (($event['left'] ?? 0) <= 0) {
+            return back()->with('status', 'No seats are left for this event.');
+        }
+
         $bookings[$slug] = $slug;
         session(['bookings' => $bookings]);
-        $event = collect($this->eventData())->firstWhere('slug', $slug);
-        $this->mongo->insert('registrations', ['event_slug' => $slug, 'event_title' => $event['title'] ?? $slug, 'user_email' => session('startup_user.email'), 'status' => 'Registered']);
+
+        $updatedBooked = ($event['booked'] ?? 0) + 1;
+        $updatedLeft = max(0, ($event['left'] ?? 0) - 1);
+        $user = session('startup_user', []);
+
+        $persisted = $this->mongo->updateOne('events', ['slug' => $slug], ['booked' => $updatedBooked, 'left' => $updatedLeft]);
+        if (! $persisted) {
+            $seatChanges = session('event_seat_changes', []);
+            $seatChanges[$slug] = ($seatChanges[$slug] ?? 0) + 1;
+            session(['event_seat_changes' => $seatChanges]);
+        }
+
+        $this->mongo->insert('registrations', ['event_slug' => $slug, 'event_title' => $event['title'] ?? $slug, 'user_email' => $user['email'] ?? null, 'user_name' => $user['name'] ?? 'User', 'status' => 'Registered']);
+        $this->notifyAdmin($this->userLabel($user).' registered for event '.$event['title'].'. Seats left: '.$updatedLeft, [
+            'event_slug' => $slug,
+            'event_title' => $event['title'],
+            'user_email' => $user['email'] ?? null,
+            'user_name' => $user['name'] ?? 'User',
+            'user_role' => $user['role'] ?? null,
+            'user_phone' => $user['phone'] ?? null,
+            'user_city' => $user['city'] ?? null,
+            'seats_left' => $updatedLeft,
+        ]);
 
         return back()->with('status', 'Event registered successfully.');
     }
@@ -305,11 +392,83 @@ class StartupSphereController extends Controller
             $saved = session('saved_startups', []);
             $saved[$slug] = $slug;
             session(['saved_startups' => $saved]);
+            $user = session('startup_user', []);
 
-            $this->mongo->insert('saved_startups', ['startup_slug' => $slug, 'startup_title' => $startup['name'], 'user_email' => session('startup_user.email')]);
+            $this->mongo->insert('saved_startups', [
+                'startup_slug' => $slug,
+                'startup_title' => $startup['name'],
+                'user_email' => $user['email'] ?? null,
+                'user_name' => $user['name'] ?? 'User',
+                'user_role' => $user['role'] ?? null,
+            ]);
+            $this->notifyAdmin($this->userLabel($user).' saved startup '.$startup['name'].'.', [
+                'type' => 'startup_saved',
+                'startup_slug' => $slug,
+                'startup_title' => $startup['name'],
+                'user_email' => $user['email'] ?? null,
+                'user_name' => $user['name'] ?? 'User',
+                'user_role' => $user['role'] ?? null,
+                'user_phone' => $user['phone'] ?? null,
+                'user_city' => $user['city'] ?? null,
+            ]);
         }
 
         return back()->with('status', 'Startup saved to your dashboard.');
+    }
+
+    public function interestStartup(Request $request, string $slug)
+    {
+        if (! $this->isStartupInvestor()) {
+            return back()->with('status', 'Only startup investors can send investment interest.');
+        }
+
+        $startup = collect($this->startupData())->firstWhere('slug', $slug);
+
+        if ($startup) {
+            $user = session('startup_user', []);
+            $this->mongo->insert('startup_interests', [
+                'startup_slug' => $slug,
+                'startup_title' => $startup['name'],
+                'user_email' => $user['email'] ?? null,
+                'user_name' => $user['name'] ?? 'Startup Investor',
+                'status' => 'Interested',
+            ]);
+            $this->notifyAdmin(($user['name'] ?? 'Startup Investor').' wants to invest in startup '.$startup['name'].'.', [
+                'type' => 'startup_investment_request',
+                'startup_slug' => $slug,
+                'startup_title' => $startup['name'],
+                'user_email' => $user['email'] ?? null,
+                'user_name' => $user['name'] ?? 'Startup Investor',
+            ]);
+        }
+
+        return back()->with('status', 'Investment interest sent to admin.');
+    }
+
+    public function investEvent(Request $request, string $slug)
+    {
+        if (! $this->isStartupInvestor()) {
+            return back()->with('status', 'Only startup investors can send investment requests.');
+        }
+
+        $event = collect($this->eventData())->firstWhere('slug', $slug);
+        abort_unless($event, 404);
+
+        $user = session('startup_user', []);
+        $requestData = [
+            'event_slug' => $slug,
+            'event_title' => $event['title'],
+            'user_email' => $user['email'] ?? null,
+            'user_name' => $user['name'] ?? 'Startup Investor',
+            'status' => 'Requested',
+        ];
+
+        $this->mongo->insert('event_investment_requests', $requestData);
+        $this->notifyAdmin(($user['name'] ?? 'Startup Investor').' wants to invest in event '.$event['title'].'.', $requestData + [
+            'type' => 'event_investment_request',
+        ]);
+
+        return back()->with('status', 'Investment request sent to admin.');
     }
 
 
@@ -317,14 +476,75 @@ class StartupSphereController extends Controller
     public function storeReview(Request $request)
     {
         $data = $request->validate([
-            'target' => 'required',
+            'event_slug' => 'required',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|min:5',
         ]);
 
-        $this->mongo->insert('reviews', $data + ['user_email' => session('startup_user.email')]);
+        $event = collect($this->eventData())->firstWhere('slug', $data['event_slug']);
+        abort_unless($event, 404);
+
+        $review = $data + [
+            'target' => $event['title'],
+            'user_email' => session('startup_user.email'),
+            'user_name' => session('startup_user.name'),
+            'user_role' => session('startup_user.role'),
+        ];
+
+        $reviews = session('reviews', []);
+        $reviews[] = $review;
+        session(['reviews' => $reviews]);
+
+        $this->mongo->insert('reviews', $review);
+        $this->notifyAdmin($this->userLabel(session('startup_user', [])).' reviewed event '.$event['title'].' with '.$data['rating'].' stars.', [
+            'type' => 'event_review',
+            'event_slug' => $data['event_slug'],
+            'event_title' => $event['title'],
+            'rating' => $data['rating'],
+            'comment' => $data['comment'],
+            'user_email' => session('startup_user.email'),
+            'user_name' => session('startup_user.name'),
+            'user_role' => session('startup_user.role'),
+            'user_phone' => session('startup_user.phone'),
+            'user_city' => session('startup_user.city'),
+        ]);
 
         return back()->with('status', 'Review submitted successfully.');
+    }
+
+    private function canRegisterForEvents(): bool
+    {
+        return session('startup_user.role') === 'User';
+    }
+
+    private function isStartupInvestor(): bool
+    {
+        return session('startup_user.role') === 'Startup Investor';
+    }
+
+    private function isAdmin(): bool
+    {
+        return session('startup_user.role') === 'Admin' && session('startup_user.email') === '123@gmail.com';
+    }
+
+    private function normalizeRole(string $role): string
+    {
+        return match ($role) {
+            'Admin' => 'Admin',
+            'Investor', 'Startup Investor' => 'Startup Investor',
+            default => 'User',
+        };
+    }
+
+    private function userLabel(array $user): string
+    {
+        $name = $user['name'] ?? 'User';
+        $email = $user['email'] ?? 'no email';
+        $role = $user['role'] ?? 'User';
+        $phone = $user['phone'] ?? 'no phone';
+        $city = $user['city'] ?? 'no city';
+
+        return "{$name} ({$email}, {$role}, {$phone}, {$city})";
     }
 
     public function storeFeedback(Request $request)
@@ -477,13 +697,21 @@ class StartupSphereController extends Controller
                 'left' => max(0, $seats - $booked),
                 'reminder' => $index < 4 ? '24h and 1h reminders enabled' : 'Reminder available after registration',
                 'rating' => round(4.1 + (($index % 8) / 10), 1),
-                'description' => 'A practical startup ecosystem event with founders, mentors, investors, product builders, and networking opportunities.',
+                'description' => 'A practical startup ecosystem event with founders, students, investors, product builders, and networking opportunities.',
             ];
         }
 
         return array_map(function ($event) {
             $seats = $event['seats'] ?? 100;
             $booked = $event['booked'] ?? max(0, $seats - ($event['left'] ?? 25));
+            $seatChange = session('event_seat_changes.'.$event['slug'], 0);
+            $booked += $seatChange;
+            $event['booked'] = $booked;
+            $event['left'] = max(0, $seats - $booked);
+            $reviewRating = $this->eventReviewRating($event['slug'], $event['title'] ?? null);
+            if ($reviewRating !== null) {
+                $event['rating'] = $reviewRating;
+            }
 
             return $event + [
                 'slug' => Str::slug($event['title'] ?? 'event'),
@@ -497,22 +725,27 @@ class StartupSphereController extends Controller
                 'price' => 'Free',
                 'seats' => $seats,
                 'booked' => $booked,
-                'left' => max(0, $seats - $booked),
+                'left' => $event['left'],
                 'reminder' => '24h and 1h reminders available after registration',
                 'rating' => 4.5,
-                'description' => 'A practical startup ecosystem event with founders, mentors, investors, product builders, and networking opportunities.',
+                'description' => 'A practical startup ecosystem event with founders, students, investors, product builders, and networking opportunities.',
             ];
         }, $this->mongo->all('events', $items));
     }
 
-    private function mentorData(): array
+    private function eventReviewRating(string $slug, ?string $title = null): ?float
     {
-        return $this->mongo->all('mentors', [
-            ['name' => 'Ananya Rao', 'expertise' => 'Startup Strategy', 'industry' => 'AI', 'experience' => '12 years', 'sessions' => 240, 'rating' => 4.9, 'verified' => true],
-            ['name' => 'Vikram Sethi', 'expertise' => 'Fundraising', 'industry' => 'FinTech', 'experience' => '15 years', 'sessions' => 310, 'rating' => 4.8, 'verified' => true],
-            ['name' => 'Meera Iyer', 'expertise' => 'Product Growth', 'industry' => 'SaaS', 'experience' => '10 years', 'sessions' => 180, 'rating' => 4.7, 'verified' => true],
-            ['name' => 'Rohan Batra', 'expertise' => 'Marketing', 'industry' => 'E-commerce', 'experience' => '9 years', 'sessions' => 160, 'rating' => 4.6, 'verified' => false],
-        ]);
+        $ratings = collect($this->reviewData())
+            ->filter(fn ($review) => ($review['event_slug'] ?? null) === $slug || ($title && ($review['target'] ?? null) === $title))
+            ->pluck('rating')
+            ->filter(fn ($rating) => is_numeric($rating))
+            ->map(fn ($rating) => (int) $rating);
+
+        if ($ratings->isEmpty()) {
+            return null;
+        }
+
+        return round($ratings->avg(), 1);
     }
 
     private function investorData(): array
@@ -546,12 +779,12 @@ class StartupSphereController extends Controller
                 'meta' => 'Funding Rs '.$item['funding_raised'].'L / Rs '.$item['funding_goal'].'L | Rating '.$item['rating'],
                 'search' => $item['name'].' '.$item['category'].' '.$item['stage'].' '.$item['city'].' '.$item['founder'].' '.$item['description'],
             ]),
-            'people' => collect(array_merge($this->mentorData(), $this->investorData()))->map(fn ($item) => [
-                'type' => 'Expert',
+            'people' => collect($this->investorData())->map(fn ($item) => [
+                'type' => 'Investor',
                 'title' => $item['name'],
                 'subtitle' => ($item['industry'] ?? 'Startup').' | '.$item['expertise'],
-                'description' => 'Verified startup ecosystem expert for guidance, funding, and network support.',
-                'url' => Str::contains(Str::lower($item['expertise']), 'fund') || Str::contains(Str::lower($item['expertise']), 'seed') ? '/investors' : '/mentors',
+                'description' => 'Verified startup investor for funding interest, event sponsorship, and startup profile review.',
+                'url' => '/investors',
                 'meta' => $item['experience'].' | Rating '.$item['rating'],
                 'search' => $item['name'].' '.$item['expertise'].' '.($item['industry'] ?? '').' '.$item['experience'],
             ]),
@@ -583,12 +816,42 @@ class StartupSphereController extends Controller
 
     private function notificationData(): array
     {
-        return [
+        $default = [
             'New startup event added: AI Innovation Summit.',
             'Your event registration is confirmed.',
-            'A mentor request was accepted.',
+            'Investor requests appear here for admin review.',
             'New startup profile approved by admin.',
         ];
+
+        if (session('startup_user.role') !== 'Admin') {
+            return [
+                'Your latest activity is saved to your dashboard.',
+                'Use event filters to find matching startup events.',
+                'Startup investors can send requests that notify admin.',
+            ];
+        }
+
+        $adminEmail = session('startup_user.email', '123@gmail.com');
+        $stored = collect($this->mongo->all('admin_notifications', [], ['admin_email' => $adminEmail]))
+            ->pluck('message')
+            ->all();
+
+        return array_merge(session('admin_notifications', []), $stored, $default);
+    }
+
+    private function notifyAdmin(string $message, array $data = []): void
+    {
+        $notification = $data + [
+            'admin_email' => '123@gmail.com',
+            'message' => $message,
+            'type' => 'event_registration',
+        ];
+
+        $notifications = session('admin_notifications', []);
+        array_unshift($notifications, $message);
+        session(['admin_notifications' => array_slice($notifications, 0, 20)]);
+
+        $this->mongo->insert('admin_notifications', $notification);
     }
 
     private function dashboardStats(array $events, array $startups): array
@@ -596,7 +859,6 @@ class StartupSphereController extends Controller
         return [
             'events' => count($events),
             'startups' => count($startups),
-            'mentors' => count($this->mentorData()),
             'investors' => count($this->investorData()),
             'users' => count($this->userData()),
         ];
@@ -605,25 +867,27 @@ class StartupSphereController extends Controller
     private function userData(): array
     {
         return $this->mongo->all('users', [
-            ['name' => 'Admin User', 'email' => 'admin@startupsphere.com', 'phone' => '+91-9000000001', 'role' => 'Admin', 'city' => 'Mohali'],
-            ['name' => 'Demo Founder', 'email' => 'demo@startupsphere.com', 'phone' => '+91-9876543210', 'role' => 'Startup Founder', 'city' => 'Mohali'],
-            ['name' => 'Investor Demo', 'email' => 'investor@startupsphere.com', 'phone' => '+91-9000000002', 'role' => 'Investor', 'city' => 'Delhi'],
+            ['name' => 'Nehaa', 'email' => '123@gmail.com', 'phone' => '+91-9000000001', 'role' => 'Admin', 'city' => 'Mohali'],
+            ['name' => 'Demo User', 'email' => 'demo@startupsphere.com', 'phone' => '+91-9876543210', 'role' => 'User', 'city' => 'Mohali'],
+            ['name' => 'Startup Investor Demo', 'email' => 'investor@startupsphere.com', 'phone' => '+91-9000000002', 'role' => 'Startup Investor', 'city' => 'Delhi'],
         ]);
     }
 
     private function reviewData(): array
     {
-        return $this->mongo->all('reviews', [
-            ['target' => 'Startup Pitch Night', 'rating' => 5, 'comment' => 'Useful event for learning how startup pitches work.', 'user_email' => 'student@startupsphere.com'],
-            ['target' => 'NeuralX', 'rating' => 4, 'comment' => 'Strong AI startup profile with clear founder details.', 'user_email' => 'investor@startupsphere.com'],
-        ]);
+        $fallback = [
+            ['event_slug' => 'startup-pitch-night', 'target' => 'Startup Pitch Night', 'rating' => 5, 'comment' => 'Useful event for learning how startup pitches work.', 'user_email' => 'student@startupsphere.com'],
+            ['event_slug' => 'ai-innovation-summit', 'target' => 'AI Innovation Summit', 'rating' => 4, 'comment' => 'Strong event for startup networking and product demos.', 'user_email' => 'student@startupsphere.com'],
+        ];
+
+        return array_merge($this->mongo->all('reviews', $fallback), session('reviews', []));
     }
 
     private function feedbackData(): array
     {
         return $this->mongo->all('feedbacks', [
             ['subject' => 'Event listing', 'rating' => 5, 'message' => 'The events are easy to browse and register for.', 'user_email' => 'demo@startupsphere.com'],
-            ['subject' => 'Mentor section', 'rating' => 4, 'message' => 'Mentor profiles are simple and useful.', 'user_email' => 'student@startupsphere.com'],
+            ['subject' => 'Investor section', 'rating' => 4, 'message' => 'Investor request flow is simple and useful.', 'user_email' => 'student@startupsphere.com'],
         ]);
     }
 

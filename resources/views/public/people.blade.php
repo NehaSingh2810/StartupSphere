@@ -14,8 +14,8 @@
         <div class="card">
             <span class="tag">{{ $person['expertise'] }}</span>
             <h3>{{ $person['name'] }}</h3>
-            <p>{{ $kind === 'mentor' ? 'Experience' : 'Funding Focus' }}: {{ $person['experience'] }}</p>
-            <p>{{ $person['sessions'] }} {{ $kind === 'mentor' ? 'sessions completed' : 'portfolio/startup connects' }} | Rating {{ $person['rating'] }}</p>
+            <p>Funding Focus: {{ $person['experience'] }}</p>
+            <p>{{ $person['sessions'] }} portfolio/startup connects | Rating {{ $person['rating'] }}</p>
             <a class="btn light" href="/login">Connect</a>
         </div>
     @endforeach
