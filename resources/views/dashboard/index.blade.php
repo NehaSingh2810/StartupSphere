@@ -24,11 +24,14 @@
                 <div class="card"><h3>Startups</h3><p>Manage startup listings.</p><a class="btn light" href="/dashboard/startups">Open</a></div>
                 <div class="card"><h3>Investors</h3><p>View investor data.</p><a class="btn light" href="/dashboard/investors">Open</a></div>
                 <div class="card"><h3>Notifications</h3><p>Review registrations and investor requests.</p><a class="btn light" href="/dashboard/notifications">Open</a></div>
+                <div class="card"><h3>Registered Events</h3><p>Review user event registrations.</p><a class="btn light" href="/dashboard/registered-events">Open</a></div>
+                <div class="card"><h3>Saved Startups</h3><p>Review startups saved by users.</p><a class="btn light" href="/dashboard/saved-startups">Open</a></div>
                 <div class="card"><h3>Reports</h3><p>View system reports.</p><a class="btn light" href="/dashboard/reports">Open</a></div>
             </div>
         @elseif($role === 'User')
             <div class="grid cards" style="margin-bottom: 32px;">
                 <div class="card"><h3>Upcoming Events</h3><p>Register for events.</p><a class="btn light" href="/dashboard/browse-events">Open</a></div>
+                <div class="card"><h3>Browse Startups</h3><p>Find startups and save them.</p><a class="btn light" href="/dashboard/browse-startups">Open</a></div>
                 <div class="card"><h3>Registered Events</h3><p>Your bookings.</p><a class="btn light" href="/dashboard/registered-events">Open</a></div>
                 <div class="card"><h3>Saved Startups</h3><p>Startups you saved.</p><a class="btn light" href="/dashboard/saved-startups">Open</a></div>
                 <div class="card"><h3>Reviews</h3><p>Read event reviews.</p><a class="btn light" href="/dashboard/reviews">Open</a></div>
@@ -43,7 +46,6 @@
         @else
             <div class="grid cards" style="margin-bottom: 32px;">
                 <div class="card"><h3>Reviews</h3><p>Read event reviews.</p><a class="btn light" href="/dashboard/reviews">Open</a></div>
-                <div class="card"><h3>Notifications</h3><p>View account updates.</p><a class="btn light" href="/dashboard/notifications">Open</a></div>
             </div>
         @endif
 

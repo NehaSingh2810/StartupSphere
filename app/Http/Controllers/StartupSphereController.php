@@ -227,7 +227,6 @@ class StartupSphereController extends Controller
             'events' => 'Events',
             'startups' => 'Startups',
             'investors' => 'Investors',
-            'feedback' => 'Feedback',
             'reports' => 'Reports',
             'my-startup' => 'My Startup',
             'my-events' => 'My Events',
@@ -239,7 +238,6 @@ class StartupSphereController extends Controller
             'browse-events' => 'Browse Events',
             'registered-events' => 'Registered Events',
             'saved-startups' => 'Saved Startups',
-            'certificates' => 'Certificates',
             'notifications' => 'Notifications',
             'reviews' => 'Event Reviews',
             'forum' => 'Discussion Forum',
@@ -251,11 +249,39 @@ class StartupSphereController extends Controller
 
         $events = $this->eventData();
         $startups = $this->startupData();
+        $registrations = $this->registrationData();
+        $savedStartupRecords = $this->savedStartupData();
         
+        if ($module === 'registered-events') {
+            $registeredSlugs = $this->isAdmin()
+                ? collect($registrations)->pluck('event_slug')->filter()->all()
+                : collect($registrations)
+                    ->where('user_email', session('startup_user.email'))
+                    ->pluck('event_slug')
+                    ->merge(array_keys(session('bookings', [])))
+                    ->filter()
+                    ->unique()
+                    ->all();
+
+            $events = collect($events)->whereIn('slug', $registeredSlugs)->values()->all();
+        }
+
         if ($module === 'saved-startups') {
-            $saved = $this->mongo->all('saved_startups', []);
-            $saved_slugs = collect($saved)->where('user_email', session('startup_user.email'))->pluck('startup_slug')->toArray();
-            $startups = collect($startups)->whereIn('slug', $saved_slugs)->toArray();
+            $savedSlugs = $this->isAdmin()
+                ? collect($savedStartupRecords)->pluck('startup_slug')->filter()->all()
+                : collect($savedStartupRecords)
+                    ->where('user_email', session('startup_user.email'))
+                    ->pluck('startup_slug')
+                    ->merge(array_keys(session('saved_startups', [])))
+                    ->filter()
+                    ->unique()
+                    ->all();
+
+            $startups = collect($startups)->whereIn('slug', $savedSlugs)->values()->all();
+        }
+
+        if ($module === 'notifications' && ! $this->isAdmin()) {
+            return redirect('/dashboard')->with('status', 'Notifications are available only for admin.');
         }
 
         return view('dashboard.module', [
@@ -265,9 +291,12 @@ class StartupSphereController extends Controller
             'startups' => $startups,
             'notifications' => $this->notificationData(),
             'reviews' => $this->reviewData(),
-            'feedbacks' => $this->feedbackData(),
             'users' => $this->userData(),
             'investors' => $this->investorData(),
+            'eventInvestmentRequests' => $this->eventInvestmentRequestData(),
+            'startupInvestmentRequests' => $this->startupInvestmentRequestData(),
+            'registrations' => $registrations,
+            'savedStartupRecords' => $savedStartupRecords,
             'stats' => $this->dashboardStats($events, $startups),
         ]);
     }
@@ -369,7 +398,21 @@ class StartupSphereController extends Controller
             session(['event_seat_changes' => $seatChanges]);
         }
 
-        $this->mongo->insert('registrations', ['event_slug' => $slug, 'event_title' => $event['title'] ?? $slug, 'user_email' => $user['email'] ?? null, 'user_name' => $user['name'] ?? 'User', 'status' => 'Registered']);
+        $registrationData = [
+            'event_slug' => $slug,
+            'event_title' => $event['title'] ?? $slug,
+            'user_email' => $user['email'] ?? null,
+            'user_name' => $user['name'] ?? 'User',
+            'user_role' => $user['role'] ?? null,
+            'status' => 'Registered',
+            'created_at' => now()->toDateTimeString(),
+        ];
+
+        $this->mongo->insert('registrations', $registrationData);
+        $registrations = session('registrations', []);
+        array_unshift($registrations, $registrationData);
+        session(['registrations' => array_slice($registrations, 0, 50)]);
+
         $this->notifyAdmin($this->userLabel($user).' registered for event '.$event['title'].'. Seats left: '.$updatedLeft, [
             'event_slug' => $slug,
             'event_title' => $event['title'],
@@ -394,13 +437,20 @@ class StartupSphereController extends Controller
             session(['saved_startups' => $saved]);
             $user = session('startup_user', []);
 
-            $this->mongo->insert('saved_startups', [
+            $savedStartupData = [
                 'startup_slug' => $slug,
                 'startup_title' => $startup['name'],
                 'user_email' => $user['email'] ?? null,
                 'user_name' => $user['name'] ?? 'User',
                 'user_role' => $user['role'] ?? null,
-            ]);
+                'created_at' => now()->toDateTimeString(),
+            ];
+
+            $this->mongo->insert('saved_startups', $savedStartupData);
+            $savedRecords = session('saved_startups_records', []);
+            array_unshift($savedRecords, $savedStartupData);
+            session(['saved_startups_records' => array_slice($savedRecords, 0, 50)]);
+
             $this->notifyAdmin($this->userLabel($user).' saved startup '.$startup['name'].'.', [
                 'type' => 'startup_saved',
                 'startup_slug' => $slug,
@@ -426,13 +476,20 @@ class StartupSphereController extends Controller
 
         if ($startup) {
             $user = session('startup_user', []);
-            $this->mongo->insert('startup_interests', [
+            $requestData = [
                 'startup_slug' => $slug,
                 'startup_title' => $startup['name'],
                 'user_email' => $user['email'] ?? null,
                 'user_name' => $user['name'] ?? 'Startup Investor',
                 'status' => 'Interested',
-            ]);
+                'created_at' => now()->toDateTimeString(),
+            ];
+
+            $this->mongo->insert('startup_interests', $requestData);
+            $requests = session('startup_interests', []);
+            array_unshift($requests, $requestData);
+            session(['startup_interests' => array_slice($requests, 0, 20)]);
+
             $this->notifyAdmin(($user['name'] ?? 'Startup Investor').' wants to invest in startup '.$startup['name'].'.', [
                 'type' => 'startup_investment_request',
                 'startup_slug' => $slug,
@@ -461,9 +518,14 @@ class StartupSphereController extends Controller
             'user_email' => $user['email'] ?? null,
             'user_name' => $user['name'] ?? 'Startup Investor',
             'status' => 'Requested',
+            'created_at' => now()->toDateTimeString(),
         ];
 
         $this->mongo->insert('event_investment_requests', $requestData);
+        $requests = session('event_investment_requests', []);
+        array_unshift($requests, $requestData);
+        session(['event_investment_requests' => array_slice($requests, 0, 20)]);
+
         $this->notifyAdmin(($user['name'] ?? 'Startup Investor').' wants to invest in event '.$event['title'].'.', $requestData + [
             'type' => 'event_investment_request',
         ]);
@@ -757,6 +819,26 @@ class StartupSphereController extends Controller
         ]);
     }
 
+    private function eventInvestmentRequestData(): array
+    {
+        return $this->mongo->all('event_investment_requests', session('event_investment_requests', []));
+    }
+
+    private function startupInvestmentRequestData(): array
+    {
+        return $this->mongo->all('startup_interests', session('startup_interests', []));
+    }
+
+    private function registrationData(): array
+    {
+        return $this->mongo->all('registrations', session('registrations', []));
+    }
+
+    private function savedStartupData(): array
+    {
+        return $this->mongo->all('saved_startups', session('saved_startups_records', []));
+    }
+
     private function globalSearch(string $query, string $type = 'all'): array
     {
         $query = Str::lower($query);
@@ -824,11 +906,7 @@ class StartupSphereController extends Controller
         ];
 
         if (session('startup_user.role') !== 'Admin') {
-            return [
-                'Your latest activity is saved to your dashboard.',
-                'Use event filters to find matching startup events.',
-                'Startup investors can send requests that notify admin.',
-            ];
+            return [];
         }
 
         $adminEmail = session('startup_user.email', '123@gmail.com');

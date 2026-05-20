@@ -40,6 +40,19 @@ class ExampleTest extends TestCase
         ])->assertRedirect('/dashboard');
     }
 
+    public function test_admin_feedback_dashboard_is_removed(): void
+    {
+        $this->withSession([
+            'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
+        ])->get('/dashboard')
+            ->assertDontSee('/dashboard/feedback')
+            ->assertDontSee('Feedback');
+
+        $this->withSession([
+            'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
+        ])->get('/dashboard/feedback')->assertNotFound();
+    }
+
     public function test_investor_credentials_can_login(): void
     {
         $this->post('/login', [
@@ -53,6 +66,43 @@ class ExampleTest extends TestCase
         $this->withSession([
             'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
         ])->post('/events/startup-pitch-night/book')->assertSessionHas('status', 'Only users can register for events. Startup investors can send investment requests.');
+    }
+
+    public function test_notifications_are_hidden_from_user_and_startup_investor(): void
+    {
+        $this->withSession([
+            'startup_user' => ['name' => 'Demo User', 'email' => 'user@example.com', 'role' => 'User'],
+        ])->get('/dashboard')
+            ->assertDontSee('/dashboard/notifications')
+            ->assertDontSee('Notifications');
+
+        $this->withSession([
+            'startup_user' => ['name' => 'Startup Investor Demo', 'email' => 'investor@startupsphere.com', 'role' => 'Startup Investor'],
+        ])->get('/dashboard')
+            ->assertDontSee('/dashboard/notifications')
+            ->assertDontSee('Notifications');
+    }
+
+    public function test_certificates_are_removed_from_user_section(): void
+    {
+        $this->withSession([
+            'startup_user' => ['name' => 'Demo User', 'email' => 'user@example.com', 'role' => 'User'],
+        ])->get('/dashboard')
+            ->assertDontSee('/dashboard/certificates')
+            ->assertDontSee('Certificates');
+
+        $this->withSession([
+            'startup_user' => ['name' => 'Demo User', 'email' => 'user@example.com', 'role' => 'User'],
+        ])->get('/dashboard/certificates')->assertNotFound();
+    }
+
+    public function test_non_admin_cannot_open_notifications_page(): void
+    {
+        $this->withSession([
+            'startup_user' => ['name' => 'Startup Investor Demo', 'email' => 'investor@startupsphere.com', 'role' => 'Startup Investor'],
+        ])->get('/dashboard/notifications')
+            ->assertRedirect('/dashboard')
+            ->assertSessionHas('status', 'Notifications are available only for admin.');
     }
 
     public function test_only_fixed_admin_can_add_events(): void
@@ -120,9 +170,22 @@ class ExampleTest extends TestCase
 
         $this->assertStringContainsString('user (user@example.com, User, 9999999999, Mohali) registered for event Startup Pitch Night', session('admin_notifications.0'));
 
+        $this->get('/dashboard/registered-events')
+            ->assertSee('Registered')
+            ->assertSee('Startup Pitch Night')
+            ->assertDontSee('AI Innovation Summit');
+
         $this->withSession([
             'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
+            'registrations' => session('registrations'),
         ])->get('/dashboard/notifications')->assertSee('user (user@example.com, User, 9999999999, Mohali) registered for event Startup Pitch Night');
+
+        $this->withSession([
+            'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
+            'registrations' => session('registrations'),
+        ])->get('/dashboard/registered-events')
+            ->assertSee('Startup Pitch Night')
+            ->assertSee('user@example.com');
     }
 
     public function test_startup_investor_event_request_notifies_admin(): void
@@ -136,7 +199,22 @@ class ExampleTest extends TestCase
 
         $this->withSession([
             'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
-        ])->get('/dashboard/notifications')->assertSee('Startup Investor Demo wants to invest in event Startup Pitch Night');
+            'event_investment_requests' => session('event_investment_requests'),
+            'admin_notifications' => session('admin_notifications'),
+        ])->get('/dashboard/investor-requests')
+            ->assertSee('Event Investment Requests')
+            ->assertSee('Startup Pitch Night')
+            ->assertSee('Startup Investor Demo')
+            ->assertSee('investor@startupsphere.com');
+
+        $this->withSession([
+            'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
+            'event_investment_requests' => session('event_investment_requests'),
+        ])->get('/dashboard/registered-events')
+            ->assertSee('Startup Investor Event Requests')
+            ->assertSee('Startup Pitch Night')
+            ->assertSee('Startup Investor Demo')
+            ->assertSee('investor@startupsphere.com');
     }
 
     public function test_startup_investor_startup_request_notifies_admin(): void
@@ -158,9 +236,21 @@ class ExampleTest extends TestCase
 
         $this->assertStringContainsString('user (user@example.com, User, 9999999999, Mohali) saved startup NeuralX', session('admin_notifications.0'));
 
+        $this->get('/dashboard/saved-startups')
+            ->assertSee('NeuralX')
+            ->assertDontSee('PayNova');
+
         $this->withSession([
             'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
+            'saved_startups_records' => session('saved_startups_records'),
         ])->get('/dashboard/notifications')->assertSee('user (user@example.com, User, 9999999999, Mohali) saved startup NeuralX');
+
+        $this->withSession([
+            'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
+            'saved_startups_records' => session('saved_startups_records'),
+        ])->get('/dashboard/saved-startups')
+            ->assertSee('NeuralX')
+            ->assertSee('user@example.com');
     }
 
     public function test_event_review_rating_reflects_on_listing_cards(): void

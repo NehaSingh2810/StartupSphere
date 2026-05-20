@@ -22,12 +22,59 @@
                     <button class="btn">Add Event</button>
                 </form>
             @endif
-            <div class="flow">
-                <div class="flow-step"><strong>1</strong><p>Admin adds event details like title, date, venue, organizer, seats, and category.</p></div>
-                <div class="flow-step"><strong>2</strong><p>Users search or filter events from public listing or dashboard.</p></div>
-                <div class="flow-step"><strong>3</strong><p>Register button stores participation in the registrations collection.</p></div>
-            </div>
-            <div class="grid three">@foreach($events as $event) @include('partials.event-card', ['event' => $event]) @endforeach</div>
+            @if($module === 'registered-events')
+                @if($role === 'Admin')
+                    <h2>User Event Registrations</h2>
+                    <div class="grid three">
+                        @forelse($registrations as $registration)
+                            <div class="card">
+                                <span class="tag verify">{{ $registration['status'] ?? 'Registered' }}</span>
+                                <h3>{{ $registration['event_title'] ?? 'Event registration' }}</h3>
+                                <p>User: {{ $registration['user_name'] ?? 'User' }}</p>
+                                <p>{{ $registration['user_email'] ?? 'No email' }}</p>
+                                <p>{{ $registration['created_at'] ?? 'Just now' }}</p>
+                            </div>
+                        @empty
+                            <div class="card"><span class="tag">No Registrations</span><h3>Registered Events</h3><p>User event registrations will appear here.</p></div>
+                        @endforelse
+                    </div>
+                    <h2 style="margin-top:28px;">Startup Investor Event Requests</h2>
+                    <div class="grid three">
+                        @forelse($eventInvestmentRequests as $request)
+                            <div class="card">
+                                <span class="tag alert">{{ $request['status'] ?? 'Requested' }}</span>
+                                <h3>{{ $request['event_title'] ?? 'Event request' }}</h3>
+                                <p>Startup Investor: {{ $request['user_name'] ?? 'Startup Investor' }}</p>
+                                <p>{{ $request['user_email'] ?? 'No email' }}</p>
+                                <p>{{ $request['created_at'] ?? 'Just now' }}</p>
+                            </div>
+                        @empty
+                            <div class="card"><span class="tag">No Requests</span><h3>Investor Event Requests</h3><p>Startup investor event requests will appear here after they click Invest Request.</p></div>
+                        @endforelse
+                    </div>
+                @else
+                    <div class="grid three">
+                        @forelse($events as $event)
+                            <div class="card">
+                                <span class="tag verify">Registered</span>
+                                <h3>{{ $event['title'] }}</h3>
+                                <p>{{ $event['date'] }} at {{ $event['time'] }} | {{ $event['city'] }}</p>
+                                <p>{{ $event['venue'] }} | {{ $event['price'] }}</p>
+                                <a class="btn light" href="/events/{{ $event['slug'] }}">Details</a>
+                            </div>
+                        @empty
+                            <div class="card"><span class="tag">No Events</span><h3>Registered Events</h3><p>Your registered events will appear here after you register.</p><a class="btn light" href="/dashboard/browse-events">Browse Events</a></div>
+                        @endforelse
+                    </div>
+                @endif
+            @else
+                <div class="flow">
+                    <div class="flow-step"><strong>1</strong><p>Admin adds event details like title, date, venue, organizer, seats, and category.</p></div>
+                    <div class="flow-step"><strong>2</strong><p>Users search or filter events from public listing or dashboard.</p></div>
+                    <div class="flow-step"><strong>3</strong><p>Register button stores participation in the registrations collection.</p></div>
+                </div>
+                <div class="grid three">@foreach($events as $event) @include('partials.event-card', ['event' => $event]) @endforeach</div>
+            @endif
 
         @elseif(in_array($module, ['startups', 'browse-startups', 'saved-startups', 'my-startup']))
             @if($role === 'Admin' && $module === 'startups')
@@ -60,12 +107,34 @@
                     <button class="btn">Save Profile</button>
                 </form>
             @endif
-            <div class="flow">
-                <div class="flow-step"><strong>1</strong><p>Startup directory stores founder, industry, funding stage, city, and rating.</p></div>
-                <div class="flow-step"><strong>2</strong><p>Investors can bookmark startups and track interest.</p></div>
-                <div class="flow-step"><strong>3</strong><p>Admin can add or approve startup profiles from the dashboard.</p></div>
-            </div>
-            <div class="grid three">@foreach($startups as $startup) @include('partials.startup-card', ['startup' => $startup]) @endforeach</div>
+            @if($module === 'saved-startups' && $role === 'Admin')
+                <div class="grid three">
+                    @forelse($savedStartupRecords as $saved)
+                        <div class="card">
+                            <span class="tag verify">Saved</span>
+                            <h3>{{ $saved['startup_title'] ?? 'Saved startup' }}</h3>
+                            <p>User: {{ $saved['user_name'] ?? 'User' }}</p>
+                            <p>{{ $saved['user_email'] ?? 'No email' }}</p>
+                            <p>{{ $saved['created_at'] ?? 'Just now' }}</p>
+                        </div>
+                    @empty
+                        <div class="card"><span class="tag">No Saved Startups</span><h3>Saved Startups</h3><p>User saved startup activity will appear here.</p></div>
+                    @endforelse
+                </div>
+            @else
+                <div class="flow">
+                    <div class="flow-step"><strong>1</strong><p>Startup directory stores founder, industry, funding stage, city, and rating.</p></div>
+                    <div class="flow-step"><strong>2</strong><p>Users save startups and investors send interest requests.</p></div>
+                    <div class="flow-step"><strong>3</strong><p>Admin can add or approve startup profiles from the dashboard.</p></div>
+                </div>
+                <div class="grid three">
+                    @forelse($startups as $startup)
+                        @include('partials.startup-card', ['startup' => $startup])
+                    @empty
+                        <div class="card"><span class="tag">No Startups</span><h3>Saved Startups</h3><p>Your saved startups will appear here after you save them.</p><a class="btn light" href="/dashboard/browse-startups">Browse Startups</a></div>
+                    @endforelse
+                </div>
+            @endif
 
         @elseif($module === 'users')
             <div class="grid three">
@@ -97,37 +166,55 @@
             </form>
             <div class="grid three">@foreach($reviews as $review)<div class="card"><span class="tag">{{ $review['rating'] }} Stars</span><h3>{{ $review['target'] }}</h3><p>{{ $review['comment'] }}</p><p>{{ $review['user_email'] ?? 'User' }}</p></div>@endforeach</div>
 
-        @elseif($module === 'feedback')
-            <form class="card auth" method="post" action="/dashboard/feedback">@csrf
-                <h2>Submit Feedback</h2>
-                <label>Subject</label><input name="subject" required>
-                <label>Rating</label><select name="rating"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
-                <label>Message</label><textarea name="message" rows="5" required></textarea><br><br>
-                <button class="btn">Submit Feedback</button>
-            </form>
-            <div class="grid three">@foreach($feedbacks as $item)<div class="card"><span class="tag">{{ isset($item['rating']) ? $item['rating'].' Stars' : 'Contact Feedback' }}</span><h3>{{ $item['subject'] ?? 'Feedback' }}</h3><p>{{ $item['message'] }}</p><p>{{ $item['user_email'] ?? $item['email'] ?? 'User' }}</p></div>@endforeach</div>
-
         @elseif($module === 'reports')
             <div class="stats">
                 <div class="card"><div class="metric">{{ $stats['users'] }}</div><p>Users</p></div>
                 <div class="card"><div class="metric">{{ $stats['events'] }}</div><p>Events</p></div>
                 <div class="card"><div class="metric">{{ $stats['startups'] }}</div><p>Startups</p></div>
                 <div class="card"><div class="metric">{{ count($reviews) }}</div><p>Reviews</p></div>
-                <div class="card"><div class="metric">{{ count($feedbacks) }}</div><p>Feedbacks</p></div>
             </div>
 
         @elseif($module === 'notifications')
             <div class="grid three">@foreach($notifications as $notice)<div class="card"><span class="tag alert">Notification</span><p>{{ $notice }}</p></div>@endforeach</div>
 
         @elseif($module === 'investor-requests')
-            <div class="grid three">
-                <div class="card"><span class="tag verify">Investor Flow</span><h3>Event Requests</h3><p>Investors use event cards to send investment requests. Admin receives each request as a notification.</p><a class="btn light" href="/dashboard/browse-events">Browse Events</a></div>
-                <div class="card"><span class="tag">Startup Requests</span><h3>Startup Interest</h3><p>Investors use startup cards to send interest to admin. They cannot add or edit events.</p><a class="btn light" href="/dashboard/browse-startups">Browse Startups</a></div>
-                <div class="card"><span class="tag alert">Admin Review</span><h3>Connected Notifications</h3><p>Admin checks notifications to follow up on investor requests and student registrations.</p><a class="btn light" href="/dashboard/notifications">Open Notifications</a></div>
-            </div>
+            @if($role === 'Admin')
+                <h2>Event Investment Requests</h2>
+                <div class="grid three">
+                    @forelse($eventInvestmentRequests as $request)
+                        <div class="card">
+                            <span class="tag verify">{{ $request['status'] ?? 'Requested' }}</span>
+                            <h3>{{ $request['event_title'] ?? 'Event request' }}</h3>
+                            <p>Investor: {{ $request['user_name'] ?? 'Startup Investor' }}</p>
+                            <p>{{ $request['user_email'] ?? 'No email' }}</p>
+                            <p>{{ $request['created_at'] ?? 'Just now' }}</p>
+                        </div>
+                    @empty
+                        <div class="card"><span class="tag">No Requests</span><h3>Event Requests</h3><p>Startup investor event requests will appear here automatically.</p></div>
+                    @endforelse
+                </div>
 
-        @elseif($module === 'certificates')
-            <div class="grid three"><div class="card"><span class="tag verify">Certificate</span><h3>Startup Workshop Participation</h3><p>Generated after attending a workshop or webinar.</p><button class="btn light">Download</button></div></div>
+                <h2 style="margin-top:28px;">Startup Investment Requests</h2>
+                <div class="grid three">
+                    @forelse($startupInvestmentRequests as $request)
+                        <div class="card">
+                            <span class="tag verify">{{ $request['status'] ?? 'Interested' }}</span>
+                            <h3>{{ $request['startup_title'] ?? 'Startup request' }}</h3>
+                            <p>Investor: {{ $request['user_name'] ?? 'Startup Investor' }}</p>
+                            <p>{{ $request['user_email'] ?? 'No email' }}</p>
+                            <p>{{ $request['created_at'] ?? 'Just now' }}</p>
+                        </div>
+                    @empty
+                        <div class="card"><span class="tag">No Requests</span><h3>Startup Requests</h3><p>Startup investor interest requests will appear here automatically.</p></div>
+                    @endforelse
+                </div>
+            @else
+                <div class="grid three">
+                    <div class="card"><span class="tag verify">Event Requests</span><h3>Request Event Investment</h3><p>Use event cards to send investment requests. Admin receives each request for review.</p><a class="btn light" href="/dashboard/browse-events">Browse Events</a></div>
+                    <div class="card"><span class="tag">Startup Requests</span><h3>Request Startup Investment</h3><p>Use startup cards to send interest to admin. Investors cannot add or edit events.</p><a class="btn light" href="/dashboard/browse-startups">Browse Startups</a></div>
+                    <div class="card"><span class="tag alert">Admin Review</span><h3>Request Status</h3><p>Every request is sent to the fixed admin account for review.</p><a class="btn light" href="/dashboard/investor-requests">View Requests</a></div>
+                </div>
+            @endif
 
         @elseif($module === 'profile')
             @php($user=session('startup_user'))

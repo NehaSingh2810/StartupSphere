@@ -20,7 +20,7 @@ Route::controller(StartupSphereController::class)->group(function () {
 
 Route::middleware(EnsureStartupUser::class)->controller(StartupSphereController::class)->group(function () {
     Route::get('/dashboard', 'dashboard');
-    Route::get('/dashboard/{module}', 'module')->whereIn('module', ['users', 'events', 'startups', 'investors', 'feedback', 'reports', 'my-startup', 'my-events', 'investor-requests', 'browse-startups', 'interested-startups', 'startup-requests', 'browse-events', 'registered-events', 'saved-startups', 'certificates', 'notifications', 'reviews', 'profile', 'settings']);
+    Route::get('/dashboard/{module}', 'module')->whereIn('module', ['users', 'events', 'startups', 'investors', 'reports', 'investor-requests', 'browse-startups', 'browse-events', 'registered-events', 'saved-startups', 'notifications', 'reviews', 'profile', 'settings']);
     Route::post('/dashboard/events', 'storeEvent');
     Route::post('/dashboard/startups', 'storeStartup');
 
@@ -30,7 +30,6 @@ Route::middleware(EnsureStartupUser::class)->controller(StartupSphereController:
     Route::post('/startups/{slug}/interest', 'interestStartup');
 
     Route::post('/reviews', 'storeReview');
-    Route::post('/dashboard/feedback', 'feedback');
     Route::post('/profile', 'updateProfile');
     Route::post('/settings/password', 'changePassword');
 });
