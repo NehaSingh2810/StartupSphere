@@ -537,6 +537,10 @@ class StartupSphereController extends Controller
 
     public function storeReview(Request $request)
     {
+        if ($this->isAdmin()) {
+            return back()->with('status', 'Admin can view reviews only.');
+        }
+
         $data = $request->validate([
             'event_slug' => 'required',
             'rating' => 'required|integer|min:1|max:5',
@@ -551,6 +555,7 @@ class StartupSphereController extends Controller
             'user_email' => session('startup_user.email'),
             'user_name' => session('startup_user.name'),
             'user_role' => session('startup_user.role'),
+            'created_at' => now()->toDateTimeString(),
         ];
 
         $reviews = session('reviews', []);

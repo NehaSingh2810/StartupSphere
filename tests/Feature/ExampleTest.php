@@ -123,14 +123,41 @@ class ExampleTest extends TestCase
     public function test_event_reviews_are_attached_to_event(): void
     {
         $this->withSession([
+            'startup_user' => ['name' => 'Demo User', 'email' => 'user@example.com', 'role' => 'User'],
+        ])->post('/reviews', [
+            'event_slug' => 'startup-pitch-night',
+            'rating' => 5,
+            'comment' => 'User review for this exact event.',
+        ])->assertSessionHas('status', 'Review submitted successfully.');
+
+        $this->get('/events/startup-pitch-night')->assertSee('User review for this exact event.');
+    }
+
+    public function test_admin_reviews_dashboard_is_read_only(): void
+    {
+        $this->withSession([
+            'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
+        ])->get('/dashboard')
+            ->assertSee('/dashboard/reviews')
+            ->assertSee('Reviews');
+
+        $this->withSession([
+            'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
+            'reviews' => [
+                ['event_slug' => 'startup-pitch-night', 'target' => 'Startup Pitch Night', 'rating' => 5, 'comment' => 'User review visible to admin.', 'user_email' => 'user@example.com', 'user_name' => 'Demo User', 'user_role' => 'User'],
+            ],
+        ])->get('/dashboard/reviews')
+            ->assertSee('User Reviews')
+            ->assertSee('User review visible to admin.')
+            ->assertDontSee('Submit Review');
+
+        $this->withSession([
             'startup_user' => ['name' => 'Nehaa', 'email' => '123@gmail.com', 'role' => 'Admin'],
         ])->post('/reviews', [
             'event_slug' => 'startup-pitch-night',
             'rating' => 5,
-            'comment' => 'Admin review for this exact event.',
-        ])->assertSessionHas('status', 'Review submitted successfully.');
-
-        $this->get('/events/startup-pitch-night')->assertSee('Admin review for this exact event.');
+            'comment' => 'Admin should not submit this review.',
+        ])->assertSessionHas('status', 'Admin can view reviews only.');
     }
 
     public function test_event_detail_shows_review_rating(): void

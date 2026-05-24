@@ -26,6 +26,7 @@
                 <div class="card"><h3>Notifications</h3><p>Review registrations and investor requests.</p><a class="btn light" href="/dashboard/notifications">Open</a></div>
                 <div class="card"><h3>Registered Events</h3><p>Review user event registrations.</p><a class="btn light" href="/dashboard/registered-events">Open</a></div>
                 <div class="card"><h3>Saved Startups</h3><p>Review startups saved by users.</p><a class="btn light" href="/dashboard/saved-startups">Open</a></div>
+                <div class="card"><h3>Reviews</h3><p>View user event ratings and reviews.</p><a class="btn light" href="/dashboard/reviews">Open</a></div>
                 <div class="card"><h3>Reports</h3><p>View system reports.</p><a class="btn light" href="/dashboard/reports">Open</a></div>
             </div>
         @elseif($role === 'User')

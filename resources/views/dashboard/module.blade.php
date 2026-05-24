@@ -153,18 +153,44 @@
 
 
         @elseif($module === 'reviews')
-            <form class="card" method="post" action="/reviews">@csrf
-                <h2>Add Rating and Review</h2>
-                <select name="event_slug">
-                    @foreach($events as $event)
-                        <option value="{{ $event['slug'] }}">{{ $event['title'] }}</option>
-                    @endforeach
-                </select><br><br>
-                <select name="rating"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select><br><br>
-                <textarea name="comment" placeholder="Write review" required></textarea><br><br>
-                <button class="btn">Submit Review</button>
-            </form>
-            <div class="grid three">@foreach($reviews as $review)<div class="card"><span class="tag">{{ $review['rating'] }} Stars</span><h3>{{ $review['target'] }}</h3><p>{{ $review['comment'] }}</p><p>{{ $review['user_email'] ?? 'User' }}</p></div>@endforeach</div>
+            @if($role !== 'Admin')
+                <form class="card" method="post" action="/reviews">@csrf
+                    <h2>Add Rating and Review</h2>
+                    <select name="event_slug">
+                        @foreach($events as $event)
+                            <option value="{{ $event['slug'] }}">{{ $event['title'] }}</option>
+                        @endforeach
+                    </select><br><br>
+                    <select name="rating"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select><br><br>
+                    <textarea name="comment" placeholder="Write review" required></textarea><br><br>
+                    <button class="btn">Submit Review</button>
+                </form>
+            @endif
+            <div class="section-head">
+                <div>
+                    <h2>{{ $role === 'Admin' ? 'User Reviews' : 'Event Reviews' }}</h2>
+                    <p>{{ $role === 'Admin' ? 'Read-only list of ratings submitted by platform users.' : 'Reviews submitted for startup events.' }}</p>
+                </div>
+                <span class="tag">{{ count($reviews) }} Reviews</span>
+            </div>
+            <div class="grid three">
+                @forelse($reviews as $review)
+                    <div class="card">
+                        <span class="tag">{{ $review['rating'] }} Stars</span>
+                        <h3>{{ $review['target'] }}</h3>
+                        <p>{{ $review['comment'] }}</p>
+                        @if($role === 'Admin')
+                            <p>User: {{ $review['user_name'] ?? 'User' }}</p>
+                            <p>{{ $review['user_email'] ?? 'No email' }} | {{ $review['user_role'] ?? 'User' }}</p>
+                            <p>{{ $review['created_at'] ?? 'Submitted review' }}</p>
+                        @else
+                            <p>{{ $review['user_email'] ?? 'User' }}</p>
+                        @endif
+                    </div>
+                @empty
+                    <div class="card"><span class="tag">No Reviews</span><h3>Reviews</h3><p>User ratings and reviews will appear here after submission.</p></div>
+                @endforelse
+            </div>
 
         @elseif($module === 'reports')
             <div class="stats">

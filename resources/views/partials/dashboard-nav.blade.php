@@ -11,6 +11,7 @@
         <a href="/dashboard/investor-requests">Investment Requests</a>
         <a href="/dashboard/registered-events">Registered Events</a>
         <a href="/dashboard/saved-startups">Saved Startups</a>
+        <a href="/dashboard/reviews">Reviews</a>
         <a href="/dashboard/reports">Reports</a>
         <a href="/dashboard/notifications">Notifications</a>
     @elseif($role === 'User')
@@ -24,5 +25,7 @@
         <a href="/dashboard/investor-requests">Investment Requests</a>
     @endif
 
-    <a href="/dashboard/reviews">Ratings and Reviews</a>
+    @if($role !== 'Admin')
+        <a href="/dashboard/reviews">Ratings and Reviews</a>
+    @endif
 </aside>
